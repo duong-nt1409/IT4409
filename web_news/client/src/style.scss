@@ -1,0 +1,112 @@
+// client/src/style.scss
+
+// Reset mặc định để tránh bị lề trắng vô duyên
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+$primary-color: #008080; // Teal đậm
+$bg-color: #f0f2f5; // Màu nền xám nhạt kiểu Facebook (sang hơn màu xanh chói)
+
+.auth {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw; // QUAN TRỌNG: Phải chiếm hết chiều rộng
+  background-color: $bg-color;
+
+  // Tạo hiệu ứng nền trang trí (tùy chọn)
+  background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%); 
+
+  .content-wrapper {
+     // Bao bọc để xử lý responsive sau này nếu cần
+  }
+
+  form {
+    background-color: white;
+    padding: 50px;
+    width: 400px; // Rộng hơn chút cho thoáng
+    border-radius: 20px; // Bo góc tròn trịa
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    
+    // Hiệu ứng bóng đổ xịn (Soft Shadow)
+    box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.08);
+
+    h1 {
+      color: $primary-color;
+      text-align: center;
+      font-size: 28px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin-bottom: 10px;
+    }
+
+    input {
+      padding: 15px;
+      border: 1px solid #ddd; // Viền mỏng tinh tế
+      border-radius: 8px;
+      outline: none;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background-color: #f9f9f9;
+
+      &:focus {
+        border-color: $primary-color;
+        background-color: white;
+        box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.1); // Hiệu ứng glow khi gõ
+      }
+    }
+
+    button {
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      background-color: $primary-color;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        background-color: darken($primary-color, 10%);
+        box-shadow: 0px 5px 15px rgba(0, 128, 128, 0.3);
+      }
+      
+      &:active {
+        transform: scale(0.98); // Hiệu ứng nhấn nút
+      }
+    }
+
+    p {
+      font-size: 14px;
+      color: #ff4d4f;
+      text-align: center;
+      background: #fff1f0;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ffccc7;
+    }
+
+    span {
+      font-size: 15px;
+      text-align: center;
+      color: #666;
+
+      a {
+        color: $primary-color;
+        text-decoration: none;
+        font-weight: 600;
+        margin-left: 5px;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
