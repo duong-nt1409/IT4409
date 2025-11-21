@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react"; // Thêm useContext
 import { Link, useNavigate } from "react-router-dom";
-import axios from "../utils/axios";
+import { AuthContext } from "../context/authContext"; // Import Context
 
 const Login = () => {
   const [inputs, setInputs] = useState({
@@ -11,6 +11,9 @@ const Login = () => {
 
   const navigate = useNavigate();
 
+  // Lấy hàm login từ Context
+  const { login } = useContext(AuthContext);
+
   const handleChange = (e) => {
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -18,27 +21,21 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      //what is axios?
-      //Axios is a library that allows you to make HTTP requests to a server.
-      //It is a promise-based library, which means that it will return a promise that will be resolved or rejected.
-      //It is a library that allows you to make HTTP requests to a server.
-      await axios.post("/auth/login", inputs);
-      
-      // User data is now stored in server session (cookie)
-      // No need to store in localStorage
+      // Gọi hàm login của Context (nó sẽ tự gọi API và lưu user)
+      await login(inputs);
       
       // Chuyển hướng về Trang Chủ
       navigate("/");
     } catch (err) {
-      setError(err.response?.data || "Đã xảy ra lỗi");
+      // Xử lý lỗi nếu API trả về lỗi
+      setError(err.response?.data || "Đã xảy ra lỗi đăng nhập");
     }
   };
 
   return (
     <div className="auth">
-      {/* Đã xóa h1 ở đây */}
       <form>
-        <h1>Đăng Nhập</h1> {/* Đã chuyển h1 vào trong này */}
+        <h1>Đăng Nhập</h1>
         
         <input
           type="text"
@@ -49,7 +46,7 @@ const Login = () => {
         <input
           type="password"
           placeholder="password"
-          name="password"
+          name="password" 
           onChange={handleChange}
         />
         <button onClick={handleSubmit}>Đăng Nhập</button>

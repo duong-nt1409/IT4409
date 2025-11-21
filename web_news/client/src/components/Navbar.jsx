@@ -1,17 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../context/authContext"; // Import Context
 
 const Navbar = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  
-  const logout = () => {
-    localStorage.removeItem("user");
-    window.location.reload();
-  };
+  // Lấy currentUser và hàm logout từ AuthContext
+  const { currentUser, logout } = useContext(AuthContext);
 
   return (
     <div className="navbar">
-      {/* QUAN TRỌNG: Thẻ này giúp nội dung co vào giữa 1024px */}
       <div className="container"> 
         
         <div className="logo">
@@ -28,9 +24,10 @@ const Navbar = () => {
           <Link className="link" to="/?cat=food"><h6>THỰC PHẨM</h6></Link>
           <Link className="link" to="/?cat=DESIGN"><h6>KIẾN TRÚC</h6></Link>
           
-          <span className="user-name">{user?.username}</span>
+          {/* HIỂN THỊ TÊN USER TỪ CONTEXT */}
+          <span className="user-name">{currentUser?.username}</span>
           
-          {user ? (
+          {currentUser ? (
             <span onClick={logout} className="logout-btn">Đăng xuất</span>
           ) : (
             <Link className="login-link" to="/login">Đăng nhập</Link>
