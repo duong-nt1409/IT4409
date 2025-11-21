@@ -1,64 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import axios from "../utils/axios";
-import "../style.scss"; // Tí nữa mình style cho đẹp
 
 const Navbar = () => {
-  const [user, setUser] = useState(null);
-
-  // Lấy thông tin user từ server session
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await axios.get("/auth/current");
-        setUser(res.data);
-      } catch (err) {
-        // User not logged in or session expired
-        setUser(null);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  const logout = async () => {
-    try {
-      await axios.post("/auth/logout");
-      setUser(null);
-      window.location.reload(); // Load lại trang để cập nhật giao diện
-    } catch (err) {
-      console.error("Logout error:", err);
-      // Still clear user state even if request fails
-      setUser(null);
-      window.location.reload();
-    }
+  const user = JSON.parse(localStorage.getItem("user"));
+  
+  const logout = () => {
+    localStorage.removeItem("user");
+    window.location.reload();
   };
 
   return (
     <div className="navbar">
-      <div className="container">
+      {/* QUAN TRỌNG: Thẻ này giúp nội dung co vào giữa 1024px */}
+      <div className="container"> 
+        
         <div className="logo">
           <Link to="/">
-             {/* Bạn có thể chèn ảnh logo vào đây */}
              <h2>MyNews</h2>
           </Link>
         </div>
+        
         <div className="links">
-          <Link className="link" to="/?cat=art">NGHỆ THUẬT</Link>
-          <Link className="link" to="/?cat=science">KHOA HỌC</Link>
-          <Link className="link" to="/?cat=technology">CÔNG NGHỆ</Link>
-          <Link className="link" to="/?cat=cinema">ĐIỆN ẢNH</Link>
+          <Link className="link" to="/?cat=art"><h6>NGHỆ THUẬT</h6></Link>
+          <Link className="link" to="/?cat=science"><h6>KHOA HỌC</h6></Link>
+          <Link className="link" to="/?cat=technology"><h6>CÔNG NGHỆ</h6></Link>
+          <Link className="link" to="/?cat=cinema"><h6>ĐIỆN ẢNH</h6></Link>
+          <Link className="link" to="/?cat=food"><h6>THỰC PHẨM</h6></Link>
+          <Link className="link" to="/?cat=DESIGN"><h6>KIẾN TRÚC</h6></Link>
           
-          {/* Phần hiển thị user */}
-          <span>{user?.username}</span>
+          <span className="user-name">{user?.username}</span>
+          
           {user ? (
-            <span onClick={logout} style={{cursor:"pointer"}}>Đăng xuất</span>
+            <span onClick={logout} className="logout-btn">Đăng xuất</span>
           ) : (
-            <Link className="link" to="/login">Đăng nhập</Link>
+            <Link className="login-link" to="/login">Đăng nhập</Link>
           )}
           
-          {/* Nút viết bài chỉ hiện cho vui, sau này check Admin sau */}
           <span className="write">
-            <Link className="link" to="/write">Viết bài</Link>
+            <Link to="/write">Viết bài</Link>
           </span>
         </div>
       </div>
