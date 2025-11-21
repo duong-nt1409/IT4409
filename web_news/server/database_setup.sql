@@ -1,57 +1,121 @@
--- 1. Tạo Database (Nếu chưa có)
-CREATE DATABASE IF NOT EXISTS news_db;
-USE news_db;
+-- Tạo cơ sở dữ liệu
+CREATE DATABASE IF NOT EXISTS news_website;
+USE news_website;
 
--- 2. Bảng Users (Cập nhật thêm role và ảnh đại diện)
-CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  img VARCHAR(255), -- Ảnh đại diện (Avatar)
-  role ENUM('user', 'admin') DEFAULT 'user', -- Phân quyền: user thường hoặc admin
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- ============================
+-- Bảng Roles
+-- ============================
+CREATE TABLE Roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
 );
 
--- 3. Bảng Categories (Danh mục tin tức)
-CREATE TABLE IF NOT EXISTS categories (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50) NOT NULL
+-- ============================
+-- Bảng Users
+-- ============================
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES Roles(id)
 );
 
--- Thêm sẵn các danh mục mẫu để đỡ phải tạo tay
-INSERT INTO categories (name) VALUES 
-('art'), 
-('science'), 
-('technology'), 
-('cinema'), 
-('design'), 
-('food');
-
--- 4. Bảng Posts (Bài viết tin tức)
-CREATE TABLE IF NOT EXISTS posts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  `desc` VARCHAR(1000) NOT NULL, -- Mô tả ngắn
-  img VARCHAR(255) NOT NULL,     -- Link ảnh bìa bài viết
-  content TEXT NOT NULL,         -- Nội dung chi tiết (dài)
-  date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  uid INT NOT NULL,              -- ID người viết (Liên kết với bảng users)
-  cat_id INT DEFAULT NULL,       -- ID danh mục (Liên kết với bảng categories)
-  
-  -- Tạo khóa ngoại (Ràng buộc dữ liệu)
-  FOREIGN KEY (uid) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE SET NULL
+-- ============================
+-- Bảng Categories (Thể loại tin)
+-- ============================
+CREATE TABLE Categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT
 );
 
--- 5. (Tùy chọn) Bảng Comments - Nếu bạn muốn làm tính năng bình luận
-CREATE TABLE IF NOT EXISTS comments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  desc_comment VARCHAR(500) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  uid INT NOT NULL,
-  post_id INT NOT NULL,
-  
-  FOREIGN KEY (uid) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+-- ============================
+-- Bảng Tags
+-- ============================
+CREATE TABLE Tags (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- ============================
+-- Bảng Posts (Bài viết)
+-- ============================
+CREATE TABLE Posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    category_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    is_featured BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id),
+    FOREIGN KEY (category_id) REFERENCES Categories(id)
+);
+
+-- ============================
+-- Bảng PostTags (Nhiều-nhiều giữa Posts và Tags)
+-- ============================
+CREATE TABLE PostTags (
+    post_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES Tags(id) ON DELETE CASCADE
+);
+
+-- ============================
+-- Bảng PostHistory (Lịch sử chỉnh sửa bài viết)
+-- ============================
+CREATE TABLE PostHistory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    old_content TEXT NOT NULL,
+    updated_by INT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (updated_by) REFERENCES Users(id)
+);
+
+-- ============================
+-- Bảng Comments (Bình luận)
+-- ============================
+CREATE TABLE Comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(id)
+);
+
+-- ============================
+-- Bảng Ratings (Đánh giá bài viết)
+-- ============================
+CREATE TABLE Ratings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(id),
+    UNIQUE KEY (post_id, user_id) -- mỗi user chỉ được đánh giá 1 lần
+);
+
+-- ============================
+-- Bảng NewsStats (Bài nổi bật / Thống kê)
+-- ============================
+CREATE TABLE NewsStats (
+    post_id INT PRIMARY KEY,
+    view_count INT DEFAULT 0,
+    comment_count INT DEFAULT 0,
+    rating_avg DECIMAL(3,2) DEFAULT 0,
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE
 );
