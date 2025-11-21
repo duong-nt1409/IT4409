@@ -1,14 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "../utils/axios";
 import "../style.scss"; // Tí nữa mình style cho đẹp
 
 const Navbar = () => {
-  // Lấy thông tin user từ bộ nhớ (nếu đã đăng nhập)
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setUser] = useState(null);
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    window.location.reload(); // Load lại trang để cập nhật giao diện
+  // Lấy thông tin user từ server session
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get("/auth/current");
+        setUser(res.data);
+      } catch (err) {
+        // User not logged in or session expired
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const logout = async () => {
+    try {
+      await axios.post("/auth/logout");
+      setUser(null);
+      window.location.reload(); // Load lại trang để cập nhật giao diện
+    } catch (err) {
+      console.error("Logout error:", err);
+      // Still clear user state even if request fails
+      setUser(null);
+      window.location.reload();
+    }
   };
 
   return (

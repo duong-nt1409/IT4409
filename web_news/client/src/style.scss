@@ -1,4 +1,5 @@
 // client/src/style.scss
+@use "sass:color";
 
 // Reset mặc định để tránh bị lề trắng vô duyên
 * {
@@ -73,7 +74,7 @@ $bg-color: #f0f2f5; // Màu nền xám nhạt kiểu Facebook (sang hơn màu xa
       transition: transform 0.2s, box-shadow 0.2s;
 
       &:hover {
-        background-color: darken($primary-color, 10%);
+        background-color: color.adjust($primary-color, $lightness: -10%);
         box-shadow: 0px 5px 15px rgba(0, 128, 128, 0.3);
       }
       

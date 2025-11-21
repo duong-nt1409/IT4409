@@ -42,12 +42,29 @@ export const login = (req, res) => {
     if (!isPasswordCorrect)
       return res.status(400).json("Sai tên đăng nhập hoặc mật khẩu!");
 
-    // 3. (Tạm thời) Trả về thông tin user (trừ mật khẩu)
+    // 3. Lưu thông tin user vào session (trừ mật khẩu)
     const { password, ...other } = data[0];
-    res.status(200).json(other);
+    req.session.user = other;
+    
+    res.status(200).json({ message: "Đăng nhập thành công!", user: other });
   });
 };
 
+// Lấy thông tin user hiện tại từ session
+export const getCurrentUser = (req, res) => {
+  if (req.session.user) {
+    res.status(200).json(req.session.user);
+  } else {
+    res.status(401).json("Chưa đăng nhập");
+  }
+};
+
 export const logout = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json("Lỗi khi đăng xuất");
+    }
+    res.clearCookie("connect.sid"); // Clear session cookie
     res.status(200).json("Đã đăng xuất.");
+  });
 };

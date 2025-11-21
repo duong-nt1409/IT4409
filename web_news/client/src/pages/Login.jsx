@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../utils/axios";
 
 const Login = () => {
   const [inputs, setInputs] = useState({
@@ -18,15 +18,19 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:8800/api/auth/login", inputs);
+      //what is axios?
+      //Axios is a library that allows you to make HTTP requests to a server.
+      //It is a promise-based library, which means that it will return a promise that will be resolved or rejected.
+      //It is a library that allows you to make HTTP requests to a server.
+      await axios.post("/auth/login", inputs);
       
-      // QUAN TRỌNG: Lưu thông tin user vào Local Storage
-      localStorage.setItem("user", JSON.stringify(res.data));
+      // User data is now stored in server session (cookie)
+      // No need to store in localStorage
       
       // Chuyển hướng về Trang Chủ
       navigate("/");
     } catch (err) {
-      setError(err.response.data);
+      setError(err.response?.data || "Đã xảy ra lỗi");
     }
   };
 
