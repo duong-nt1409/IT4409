@@ -1,6 +1,6 @@
 -- Tạo cơ sở dữ liệu
-CREATE DATABASE IF NOT EXISTS news_website;
-USE news_website;
+CREATE DATABASE IF NOT EXISTS web_news;
+USE web_news;
 
 -- ============================
 -- Bảng Roles
