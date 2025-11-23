@@ -1,113 +1,261 @@
 // client/src/style.scss
-@use "sass:color";
 
-// Reset mặc định để tránh bị lề trắng vô duyên
+// 1. RESET MẶC ĐỊNH
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-$primary-color: #008080; // Teal đậm
-$bg-color: #f0f2f5; // Màu nền xám nhạt kiểu Facebook (sang hơn màu xanh chói)
+$light-green: #b9e7e7;
+$dark-green: teal;
+$bg-color: #f0f2f5;
 
-.auth {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 100vw; // QUAN TRỌNG: Phải chiếm hết chiều rộng
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: $bg-color;
+}
 
-  // Tạo hiệu ứng nền trang trí (tùy chọn)
-  background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%); 
+// 2. STYLE NAVBAR (Header bé, dính chặt lên đầu)
+.navbar {
+  background-color: white;
+  width: 100%;
+  height: 60px; // Chiều cao cố định nhỏ gọn
+  border-bottom: 1px solid #ddd;
+  
+  // Cố định lên đầu trang
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
 
-  .content-wrapper {
-     // Bao bọc để xử lý responsive sau này nếu cần
+  .container {
+    width: 100%;
+    max-width: 1024px; // Nội dung vẫn căn giữa 1024px
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 20px;
+    
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .logo {
+      h2 {
+        font-size: 24px;
+        color: $dark-green;
+        font-weight: bold;
+        margin: 0;
+      }
+      a { text-decoration: none; }
+    }
+
+    .links {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+
+      h6 {
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-transform: uppercase;
+        color: #444;
+        margin: 0;
+        &:hover { color: $dark-green; }
+      }
+
+      .write {
+        background-color: $light-green;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        a { color: teal; font-size: 11px; font-weight: bold; text-decoration: none; }
+        &:hover { background: white; border: 1px solid teal; }
+      }
+
+      .user-info { font-size: 13px; font-weight: bold; color: #333; }
+      .logout { font-size: 13px; color: red; cursor: pointer; font-weight: bold; }
+      .login-btn { font-size: 13px; text-decoration: none; color: teal; font-weight: bold; }
+    }
   }
+}
 
-  form {
-    background-color: white;
-    padding: 50px;
-    width: 400px; // Rộng hơn chút cho thoáng
-    border-radius: 20px; // Bo góc tròn trịa
+// 3. STYLE HOME (Căn giữa, đẩy nội dung xuống)
+.home {
+  width: 100%;
+  max-width: 1024px; // Giới hạn chiều rộng chuẩn
+  margin: 0 auto;    // Căn giữa màn hình
+  
+  padding-top: 100px; // Tránh bị Navbar che
+  padding-bottom: 50px;
+  min-height: 80vh;   // Chiều cao tối thiểu để đẩy Footer xuống đáy nếu ít tin
+
+  .posts {
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    
-    // Hiệu ứng bóng đổ xịn (Soft Shadow)
-    box-shadow: 0px 10px 40px rgba(0, 0, 0, 0.08);
+    gap: 50px;
 
-    h1 {
-      color: $primary-color;
-      text-align: center;
-      font-size: 28px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin-bottom: 10px;
-    }
-
-    input {
-      padding: 15px;
-      border: 1px solid #ddd; // Viền mỏng tinh tế
-      border-radius: 8px;
-      outline: none;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      background-color: #f9f9f9;
-
-      &:focus {
-        border-color: $primary-color;
-        background-color: white;
-        box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.1); // Hiệu ứng glow khi gõ
-      }
-    }
-
-    button {
-      padding: 15px;
-      border: none;
-      border-radius: 8px;
-      background-color: $primary-color;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-
-      &:hover {
-        background-color: color.adjust($primary-color, $lightness: -10%);
-        box-shadow: 0px 5px 15px rgba(0, 128, 128, 0.3);
-      }
-      
-      &:active {
-        transform: scale(0.98); // Hiệu ứng nhấn nút
-      }
-    }
-
+    // Style cho dòng thông báo khi chưa có bài
     p {
-      font-size: 14px;
-      color: #ff4d4f;
-      text-align: center;
-      background: #fff1f0;
-      padding: 10px;
-      border-radius: 5px;
-      border: 1px solid #ffccc7;
+        text-align: center;
+        font-size: 18px;
+        color: gray;
+        margin-top: 50px;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
     }
 
-    span {
-      font-size: 15px;
-      text-align: center;
-      color: #666;
+    .post {
+      display: flex;
+      gap: 40px;
+      background-color: white; 
+      padding: 20px;
+      border-radius: 8px;
+      // Hiệu ứng bóng đổ nhẹ giúp bài viết nổi bật trên nền xám
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 
-      a {
-        color: $primary-color;
-        text-decoration: none;
-        font-weight: 600;
-        margin-left: 5px;
+      &:nth-child(2n+1) {
+        flex-direction: row-reverse; // So le ảnh
+      }
 
-        &:hover {
-          text-decoration: underline;
+      .img {
+        flex: 2;
+        position: relative;
+        img {
+          width: 100%;
+          max-height: 300px;
+          object-fit: cover;
+          border-radius: 5px;
+        }
+      }
+
+      .content {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        h1 { font-size: 26px; color: #333; margin-bottom: 10px; }
+        p { 
+            font-size: 15px; color: #555; line-height: 1.6; 
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        button {
+          width: max-content;
+          padding: 8px 20px;
+          border: 1px solid teal;
+          background: white;
+          color: teal;
+          cursor: pointer;
+          font-weight: bold;
+          margin-top: 10px;
+          transition: 0.3s;
+          &:hover { background: #b9e7e7; }
         }
       }
     }
+  }
+}
+
+footer {
+  background-color: white;
+  width: 100%;
+  border-top: 5px solid #f5f5f5;
+  padding: 60px 0;
+  margin-top: auto;
+
+  // --- VŨ KHÍ BÍ MẬT: ÉP RA GIỮA ---
+  display: flex;        
+  justify-content: center; 
+  align-items: center;
+  // -------------------------------
+
+  .footer-container-final {
+    width: 100%;
+    max-width: 1200px; // Độ rộng cố định
+    padding: 0 20px;
+    
+    display: flex;
+    gap: 60px;         // Khoảng cách giữa 2 cột
+
+    // --- CỘT TRÁI ---
+    .col-left {
+      flex: 1;
+      border-right: 1px solid #eee;
+      padding-right: 40px;
+      
+      .section {
+        h3 {
+          font-size: 14px;
+          font-weight: bold;
+          color: #222;
+          margin-bottom: 15px;
+        }
+        ul {
+          list-style: none;
+          li {
+            display: flex; gap: 15px; margin-bottom: 12px;
+            font-size: 14px; color: #555; line-height: 1.5;
+          }
+        }
+      }
+    }
+
+    // --- CỘT PHẢI ---
+    .col-right {
+      flex: 1;
+      
+      h3 { font-size: 14px; font-weight: bold; color: #222; margin-bottom: 15px; }
+
+      .logo-brand {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        padding: 12px; background-color: #f9f9f9; border-radius: 6px; width: fit-content;
+      }
+
+      .license-title { font-size: 13px; font-weight: bold; color: #444; margin-bottom: 15px; text-transform: uppercase;}
+
+      .info-text {
+        p { font-size: 14px; color: #555; line-height: 1.7; margin-bottom: 8px; b { color: #000; } }
+      }
+    }
+  }
+}
+
+// Responsive Mobile
+@media (max-width: 768px) {
+  footer .footer-container-final {
+    flex-direction: column;
+    .col-left { border-right: none; border-bottom: 1px solid #eee; padding-bottom: 30px; padding-right: 0; }
+  }
+}
+
+// 5. STYLE AUTH (LOGIN/REGISTER - Full màn hình riêng biệt)
+.auth {
+  position: fixed; // Đè lên tất cả
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #b9e7e7;
+  background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+  z-index: 2000; // Cao hơn cả Navbar
+  
+  display: flex; align-items: center; justify-content: center;
+
+  form {
+    display: flex; flex-direction: column; padding: 40px; background: white; width: 350px; gap: 20px; border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+
+    h1 { text-align: center; color: teal; margin-bottom: 10px; }
+    input { padding: 12px; border: none; border-bottom: 1px solid #ccc; outline: none; }
+    button { padding: 12px; background: teal; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    p { color: red; text-align: center; font-size: 13px; }
+    span { text-align: center; font-size: 13px; a { color: teal; font-weight: bold; text-decoration: none; }}
   }
 }
