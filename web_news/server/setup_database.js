@@ -88,7 +88,16 @@ const initQuery = `
     FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
   );
-
+  -- 9. NewsStats
+  -- ===========================
+  CREATE TABLE NewsStats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    view_count INT DEFAULT 0,
+    comment_count INT DEFAULT 0,
+    rating_avg FLOAT DEFAULT 0,
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE
+  );
   -- ==========================================
   -- SEED DATA (DỮ LIỆU MẪU)
   -- ==========================================
@@ -99,25 +108,85 @@ const initQuery = `
   -- 2. Users (Pass: 123456)
   INSERT INTO Users (username, email, password_hash, role_id) VALUES 
   ('admin', 'admin@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 1),
-  ('user1', 'user1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 3);
+  ('Editor', 'user1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 2);
 
-  -- 3. Categories (Đúng theo yêu cầu của bạn)
-  INSERT INTO Categories (name) VALUES 
-  ('art'), 
-  ('science'), 
-  ('technology'), 
-  ('cinema'), 
-  ('design'), 
-  ('food');
+-- C. Thêm Categories
+INSERT IGNORE INTO Categories (name, description) VALUES 
+('Thời sự', 'Tin tức chính trị, xã hội, đời sống hàng ngày'),
+('Thế giới', 'Tin tức quốc tế, xung đột, ngoại giao'),
+('Kinh doanh', 'Tài chính, chứng khoán, thị trường, bất động sản'),
+('Công nghệ', 'Điện thoại, AI, Máy tính, Xu hướng công nghệ'),
+('Thể thao', 'Bóng đá trong nước, quốc tế, Tennis, Esports'),
+('Giải trí', 'Showbiz, Phim ảnh, Âm nhạc, Thời trang');
 
-  -- 4. Tags
-  INSERT INTO Tags (name) VALUES ('#HotTrend'), ('#Review'), ('#Tips');
+-- D. Thêm Tags
+INSERT IGNORE INTO Tags (name) VALUES ('#Hot'), ('#BreakingNews'), ('#AI'), ('#BóngĐá'), ('#Bitcoin'), ('#Showbiz');
 
-  -- 5. Posts mẫu
-  INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
-  (1, 3, 'Công nghệ AI năm 2025', 'Nội dung về AI...', 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg', 'approved', TRUE),
-  (1, 1, 'Triển lãm nghệ thuật số', 'Nội dung về Art...', 'https://images.pexels.com/photos/1269968/pexels-photo-1269968.jpeg', 'approved', FALSE),
-  (1, 4, 'Phim bom tấn mới ra rạp', 'Review phim...', 'https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg', 'approved', FALSE);
+-- E. THÊM BÀI VIẾT (POSTS) - Dữ liệu phong phú
+-- Lưu ý: ID của User và Category phải khớp với dữ liệu bên trên
+
+-- Công nghệ (Cat 4)
+INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
+(2, 4, 'Trí tuệ nhân tạo AI đang thay đổi ngành lập trình năm 2025 như thế nào?', 
+'<p>Sự bùng nổ của các công cụ AI như ChatGPT, Copilot...</p>', 
+'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg', 'approved', TRUE),
+
+(2, 4, 'Review iPhone 16 Pro Max: Có đáng để nâng cấp?', 
+'<p>Chi tiết về hiệu năng, camera và thời lượng pin...</p>', 
+'https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg', 'approved', FALSE);
+
+-- Thể thao (Cat 5)
+INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
+(2, 5, 'Đội tuyển Việt Nam chốt danh sách dự Asian Cup', 
+'<p>26 cầu thủ sẽ lên đường sang Qatar...</p>', 
+'https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg', 'approved', TRUE),
+
+(2, 5, 'Kết quả Cúp C1 Châu Âu: Real Madrid lội ngược dòng ngoạn mục', 
+'<p>Real Madrid thắng 3-1 trong một đêm thăng hoa...</p>', 
+'https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg', 'approved', FALSE);
+
+-- Kinh doanh (Cat 3)
+INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
+(2, 3, 'Giá vàng hôm nay lập đỉnh mới, người dân đổ xô đi bán',
+'<p>Thị trường vàng trong nước sáng nay ghi nhận mức tăng kỷ lục...</p>',
+'https://images.pexels.com/photos/259209/pexels-photo-259209.jpeg', 'approved', TRUE),
+
+(2, 3, 'Thị trường bất động sản có dấu hiệu ấm lên vào cuối năm',
+'<p>Thanh khoản đang dần quay trở lại phân khúc căn hộ...</p>',
+'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg', 'approved', FALSE);
+
+-- Thế Giới (Cat 2)
+INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
+(2, 2, 'Biến đổi khí hậu gây ra đợt nắng nóng kỷ lục tại Châu Âu', 
+'<p>Nhiệt độ vượt ngưỡng 40 độ C ở nhiều thành phố...</p>', 
+'https://images.pexels.com/photos/60013/desert-drought-dehydrated-clay-soil-60013.jpeg', 'approved', FALSE);
+
+-- Giải Trí (Cat 6)
+INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status, is_featured) VALUES 
+(2, 6, 'Phim bom tấn mới của Hollywood phá đảo phòng vé toàn cầu',
+'<p>Bộ phim đạt 500 triệu USD sau 3 ngày...</p>',
+'https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg', 'approved', TRUE);
+
+-- ===========================
+-- NewsStats
+-- ===========================
+INSERT INTO NewsStats (post_id, view_count, comment_count, rating_avg) VALUES 
+(1, 1500, 20, 4.5),
+(2, 800, 5, 4.0),
+(3, 2300, 45, 4.8),
+(4, 1200, 10, 4.2),
+(5, 5000, 100, 4.9),
+(6, 300, 2, 3.5),
+(7, 900, 15, 4.1),
+(8, 2500, 60, 4.7);
+
+-- ===========================
+-- PostTags
+-- ===========================
+INSERT INTO PostTags (post_id, tag_id) VALUES 
+(1, 1), (1, 3),
+(3, 1), (3, 4),
+(5, 1);
 `;
 
 // Thực thi

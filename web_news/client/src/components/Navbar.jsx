@@ -1,9 +1,8 @@
 import React, { useContext } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../context/authContext"; // Import Context
+import { AuthContext } from "../context/authContext";
 
 const Navbar = () => {
-  // Lấy currentUser và hàm logout từ AuthContext
   const { currentUser, logout } = useContext(AuthContext);
 
   return (
@@ -17,14 +16,14 @@ const Navbar = () => {
         </div>
         
         <div className="links">
-          <Link className="link" to="/?cat=art"><h6>NGHỆ THUẬT</h6></Link>
-          <Link className="link" to="/?cat=science"><h6>KHOA HỌC</h6></Link>
-          <Link className="link" to="/?cat=technology"><h6>CÔNG NGHỆ</h6></Link>
-          <Link className="link" to="/?cat=cinema"><h6>ĐIỆN ẢNH</h6></Link>
-          <Link className="link" to="/?cat=food"><h6>THỰC PHẨM</h6></Link>
-          <Link className="link" to="/?cat=DESIGN"><h6>KIẾN TRÚC</h6></Link>
+          {/* SỬA LẠI CÁC ĐƯỜNG LINK CHO KHỚP VỚI DATABASE */}
+          <Link className="link" to="/?cat=Thời sự"><h6>THỜI SỰ</h6></Link>
+          <Link className="link" to="/?cat=Thế giới"><h6>THẾ GIỚI</h6></Link>
+          <Link className="link" to="/?cat=Kinh doanh"><h6>KINH DOANH</h6></Link>
+          <Link className="link" to="/?cat=Công nghệ"><h6>CÔNG NGHỆ</h6></Link>
+          <Link className="link" to="/?cat=Thể thao"><h6>THỂ THAO</h6></Link>
+          <Link className="link" to="/?cat=Giải trí"><h6>GIẢI TRÍ</h6></Link>
           
-          {/* HIỂN THỊ TÊN USER TỪ CONTEXT */}
           <span className="user-name">{currentUser?.username}</span>
           
           {currentUser ? (
