@@ -36,6 +36,14 @@ const initQuery = `
     password_hash VARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
     avatar VARCHAR(255) DEFAULT 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+    -- Thông tin Editor (cho đăng ký)
+    name VARCHAR(100),
+    age INT,
+    years_of_experience INT,
+    -- Thông tin chi tiết (cho admin quản lý)
+    article_count INT DEFAULT 0,
+    total_likes INT DEFAULT 0,
+    comment_count INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES Roles(id)
   );
@@ -88,7 +96,17 @@ const initQuery = `
     FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
   );
-  -- 9. NewsStats
+  -- 9. Bảng Likes (Thích bài viết)
+  CREATE TABLE Likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_like (post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+  );
+  -- 10. Bảng NewsStats (Thống kê bài viết)
   -- ===========================
   CREATE TABLE NewsStats (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -106,9 +124,11 @@ const initQuery = `
   INSERT INTO Roles (name) VALUES ('Admin'), ('Editor'), ('User');
 
   -- 2. Users (Pass: 123456)
-  INSERT INTO Users (username, email, password_hash, role_id) VALUES 
-  ('admin', 'admin@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 1),
-  ('Editor', 'user1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 2);
+  INSERT INTO Users (username, email, password_hash, role_id, name, age, years_of_experience) VALUES 
+  ('admin', 'admin@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 1, 'Admin User', 30, 5),
+  ('user1', 'user1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 3, 'Regular User', 25, 0),
+  ('editor1', 'editor1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 2, 'Nguyễn Văn Editor', 28, 3);
+
 
 -- C. Thêm Categories
 INSERT IGNORE INTO Categories (name, description) VALUES 

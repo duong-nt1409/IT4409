@@ -23,7 +23,11 @@ const Navbar = () => {
           <Link className="link" to="/?cat=Công nghệ"><h6>CÔNG NGHỆ</h6></Link>
           <Link className="link" to="/?cat=Thể thao"><h6>THỂ THAO</h6></Link>
           <Link className="link" to="/?cat=Giải trí"><h6>GIẢI TRÍ</h6></Link>
-          
+          {currentUser?.role_id === 2 ? (
+            <Link className="link" to="/editor">Trang Editor</Link>
+          ) : (
+            <Link className="link" to="/editor-login">Đăng nhập Editor</Link>
+          )}
           <span className="user-name">{currentUser?.username}</span>
           
           {currentUser ? (
