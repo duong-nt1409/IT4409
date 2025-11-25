@@ -23,7 +23,11 @@ const Navbar = () => {
           <Link className="link" to="/?cat=cinema"><h6>ĐIỆN ẢNH</h6></Link>
           <Link className="link" to="/?cat=food"><h6>THỰC PHẨM</h6></Link>
           <Link className="link" to="/?cat=DESIGN"><h6>KIẾN TRÚC</h6></Link>
-          
+          {currentUser ? (
+            <Link className="link" to="/editor">Trang Editor</Link>
+          ) : (
+            <Link className="link" to="/editor-login">Đăng nhập Editor</Link>
+          )}
           {/* HIỂN THỊ TÊN USER TỪ CONTEXT */}
           <span className="user-name">{currentUser?.username}</span>
           
@@ -33,6 +37,8 @@ const Navbar = () => {
             <Link className="login-link" to="/login">Đăng nhập</Link>
           )}
           
+
+
           <span className="write">
             <Link to="/write">Viết bài</Link>
           </span>

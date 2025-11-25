@@ -10,6 +10,10 @@ import Single from "./pages/Single";
 import Write from "./pages/Write";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ErrorPage from "./pages/Error";
+import LoginEditor from "./pages/Login-Editor";
+import RegisterEditor from "./pages/Register-Editor";
+import EditorPage from "./pages/Page-Editor";
 import "./style.scss";
 
 const Layout = () => {
@@ -32,14 +36,19 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Layout />,
+    errorElement: <ErrorPage />,
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/post/:id", element: <Single /> },
-      { path: "/write", element: <Write /> },
+      { index: true, element: <Home /> },
+      { path: "post/:id", element: <Single /> },
+      { path: "write", element: <Write /> },
+      { path: "editor", element: <EditorPage /> },
     ],
   },
-  { path: "/register", element: <Register /> },
-  { path: "/login", element: <Login /> },
+  { path: "/register", element: <Register />, errorElement: <ErrorPage /> },
+  { path: "/login", element: <Login />, errorElement: <ErrorPage /> },
+  { path: "/editor-login", element: <LoginEditor />, errorElement: <ErrorPage /> },
+  { path: "/register-editor", element: <RegisterEditor />, errorElement: <ErrorPage /> },
+  { path: "*", element: <ErrorPage /> },
 ]);
 
 function App() {
