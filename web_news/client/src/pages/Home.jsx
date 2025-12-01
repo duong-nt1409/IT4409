@@ -18,7 +18,6 @@ const Home = () => {
     fetchData();
   }, [cat]);
 
-  // Hàm cắt chữ nếu dài quá
   const getText = (html) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     return doc.body.textContent;
@@ -30,10 +29,8 @@ const Home = () => {
     <div className="home">
       <div className="news-layout">
         
-        {/* --- CỘT TRÁI (TIN CHÍNH) --- */}
         <div className="main-col">
           
-          {/* 1. TIN NỔI BẬT NHẤT (Bài đầu tiên) */}
           {posts[0] && (
             <div className="featured-post">
               <div className="img-container">
@@ -46,7 +43,6 @@ const Home = () => {
                   <h1>{posts[0].title}</h1>
                 </Link>
                 <div className="meta">
-                   {/* Giả lập tên nguồn tin */}
                    <span className="source">MyNews</span> 
                    <span className="time">• 2 giờ trước</span>
                 </div>

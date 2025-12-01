@@ -16,7 +16,6 @@ const Navbar = () => {
         </div>
         
         <div className="links">
-          {/* SỬA LẠI CÁC ĐƯỜNG LINK CHO KHỚP VỚI DATABASE */}
           <Link className="link" to="/?cat=Thời sự"><h6>THỜI SỰ</h6></Link>
           <Link className="link" to="/?cat=Thế giới"><h6>THẾ GIỚI</h6></Link>
           <Link className="link" to="/?cat=Kinh doanh"><h6>KINH DOANH</h6></Link>

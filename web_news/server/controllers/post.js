@@ -3,14 +3,24 @@ import { db } from "../db.js";
 // Lấy danh sách bài viết
 export const getPosts = (req, res) => {
   const catName = req.query.cat;
+  const uid = req.query.uid; // Lọc theo User ID (cho Editor)
 
-  // Nếu có catName thì JOIN bảng để lọc theo tên danh mục
-  // Nếu không thì lấy hết
-  const q = catName
-    ? "SELECT p.*, c.name as cat_name FROM Posts p JOIN Categories c ON p.category_id = c.id WHERE c.name = ?"
-    : "SELECT * FROM Posts";
+  let q = "SELECT p.*, c.name as cat_name FROM Posts p LEFT JOIN Categories c ON p.category_id = c.id WHERE 1=1";
+  const params = [];
 
-  db.query(q, [catName], (err, data) => {
+  if (catName) {
+    q += " AND c.name = ?";
+    params.push(catName);
+  }
+
+  if (uid) {
+    q += " AND p.user_id = ?";
+    params.push(uid);
+  }
+
+  q += " ORDER BY p.created_at DESC";
+
+  db.query(q, params, (err, data) => {
     if (err) return res.status(500).send(err);
     return res.status(200).json(data);
   });
@@ -22,7 +32,7 @@ export const getPost = (req, res) => {
     "SELECT p.id, u.username, p.title, p.content, p.thumbnail, u.avatar, p.category_id, c.name as cat_name, p.created_at as date " +
     "FROM Posts p " +
     "JOIN Users u ON u.id = p.user_id " +
-    "JOIN Categories c ON c.id = p.category_id " +
+    "LEFT JOIN Categories c ON c.id = p.category_id " +
     "WHERE p.id = ?";
 
   db.query(q, [req.params.id], (err, data) => {
