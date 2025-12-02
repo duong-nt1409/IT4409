@@ -1,74 +1,118 @@
-import { useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
+import axios from "../utils/axios";
 
 const defaultAvatar =
   "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-const profileFields = [
-  { key: "username", label: "Tên đăng nhập" },
-  { key: "email", label: "Email" },
-  { key: "name", label: "Họ và tên" },
-  { key: "age", label: "Tuổi" },
-  { key: "years_of_experience", label: "Số năm kinh nghiệm" },
-  { key: "role_id", label: "Role ID" },
-];
-
 const EditorPage = () => {
   const navigate = useNavigate();
   const { currentUser, logout } = useContext(AuthContext);
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     if (!currentUser) {
       navigate("/");
+    } else {
+      fetchMyPosts();
     }
   }, [currentUser, navigate]);
 
-  if (!currentUser) {
-    return null;
-  }
-
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
+  const fetchMyPosts = async () => {
+    try {
+      const res = await axios.get(`/posts?uid=${currentUser.id}`);
+      setPosts(res.data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
+  const handleDelete = async (id) => {
+    alert("Chức năng xóa đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  if (!currentUser) return null;
+
   return (
-    <section className="editor-page">
-      <div className="editor-card">
-        <div className="editor-header">
+    <div className="editor-dashboard">
+      <div className="sidebar">
+        <div className="user-profile">
           <img
             src={currentUser.avatar || defaultAvatar}
-            alt="Editor avatar"
-            className="editor-avatar"
+            alt=""
+            className="avatar"
           />
-          <div>
-            <h1>{currentUser.name || currentUser.username}</h1>
-            <p>Editor Dashboard</p>
-          </div>
+          <h3>{currentUser.name || currentUser.username}</h3>
+          <span>Editor</span>
         </div>
-
-        <div className="editor-details">
-          {profileFields.map(({ key, label }) => {
-            const value = currentUser[key];
-            if (value === undefined || value === null || value === "") {
-              return null;
-            }
-
-            return (
-              <div key={key} className="detail-row">
-                <span>{label}</span>
-                <strong>{value}</strong>
-              </div>
-            );
-          })}
+        <div className="menu">
+          <button className="active">Bài viết của tôi</button>
+          <button onClick={logout}>Đăng xuất</button>
         </div>
-
-        <button className="editor-logout" onClick={handleLogout}>
-          Đăng xuất
-        </button>
       </div>
-    </section>
+
+      <div className="main-content-editor">
+        <div className="header">
+          <h1>Quản lý bài viết</h1>
+          <Link to="/write" className="btn-create">
+            + Viết bài mới
+          </Link>
+        </div>
+
+        <div className="posts-list">
+          {posts.length === 0 ? (
+            <p>Bạn chưa có bài viết nào.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Ảnh</th>
+                  <th>Tiêu đề</th>
+                  <th>Danh mục</th>
+                  <th>Ngày tạo</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posts.map((post) => (
+                  <tr key={post.id}>
+                    <td>
+                      <img src={post.thumbnail} alt="" className="thumb" />
+                    </td>
+                    <td>{post.title}</td>
+                    <td>{post.cat_name}</td>
+                    <td>{new Date(post.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <span className={`status ${post.status}`}>
+                        {post.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="actions">
+                        <Link to={`/write?edit=${post.id}`} state={post} className="btn-edit">
+                          Sửa
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(post.id)}
+                          className="btn-delete"
+                        >
+                          Xóa
+                        </button>
+                        <Link to={`/post/${post.id}`} className="btn-view">
+                          Xem
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,22 +1,20 @@
 import express from "express";
 import cors from "cors";
 import session from "express-session";
-import authRoutes from "./routes/auth.js"; // <-- Import route vừa tạo
+import authRoutes from "./routes/auth.js";
 import postRoutes from "./routes/post.js";
+import adminRoutes from "./routes/admin.js";
 const app = express();
 
 app.use(express.json());
-// Configure CORS to allow credentials (cookies)
-// Allow common development ports for React/Vite
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow localhost on common development ports
     const allowedOrigins = [
       "http://localhost:3000",
-      "http://localhost:5173", // Vite default
+      "http://localhost:5173",
       "http://localhost:5174",
       "http://127.0.0.1:3000",
       "http://127.0.0.1:5173"
@@ -31,19 +29,17 @@ app.use(cors({
   credentials: true
 }));
 
-// Configure session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Set to true if using HTTPS
-    httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
-// Root route
 app.get("/", (req, res) => {
   res.json({ 
     message: "Web News API Server is running!",
@@ -58,8 +54,9 @@ app.get("/", (req, res) => {
 });
 
 // Sử dụng các Route
-app.use("/api/auth", authRoutes); // <-- Định nghĩa đường dẫn gốc
+app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/admin", adminRoutes);
 const PORT = process.env.PORT || 8800;
 app.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);

@@ -1,0 +1,328 @@
+import React, { useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/authContext";
+import axios from "../utils/axios";
+import "../style_admin.scss";
+
+const AdminDashboard = () => {
+  const { currentUser, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [stats, setStats] = useState(null);
+  const [editors, setEditors] = useState([]);
+  const [pendingEditors, setPendingEditors] = useState([]);
+  const [pendingPosts, setPendingPosts] = useState([]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate("/login");
+    } else if (currentUser.role_id !== 1) {
+      navigate("/");
+      alert("Bạn không có quyền truy cập trang Admin!");
+    }
+  }, [currentUser, navigate]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const statsRes = await axios.get("/admin/stats");
+        setStats(statsRes.data);
+
+        const editorsRes = await axios.get("/admin/editors");
+        setEditors(editorsRes.data);
+
+        const pendingEditorsRes = await axios.get("/admin/editors/pending");
+        setPendingEditors(pendingEditorsRes.data);
+
+        const postsRes = await axios.get("/admin/posts/pending");
+        setPendingPosts(postsRes.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchData();
+  }, [activeTab]);
+
+  const handleApproveEditor = async (userId) => {
+    alert("Chức năng duyệt Editor đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleRejectEditor = async (userId) => {
+    alert("Chức năng từ chối Editor đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleApprovePost = async (postId) => {
+    alert("Chức năng duyệt bài đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleRejectPost = async (postId) => {
+    alert("Chức năng từ chối bài đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleDeletePost = async (postId) => {
+    alert("Chức năng xóa bài đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleDeleteEditor = async (userId) => {
+    alert("Chức năng xóa Editor đang phát triển (Vui lòng tự implement logic API)");
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  if (!currentUser) return null;
+
+  return (
+    <div className="admin-container">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="logo">
+          <h2>Admin Panel</h2>
+        </div>
+        <nav>
+          <button
+            className={activeTab === "overview" ? "active" : ""}
+            onClick={() => setActiveTab("overview")}
+          >
+            <i className="icon">📊</i> Tổng Quan
+          </button>
+          <button
+            className={activeTab === "editors" ? "active" : ""}
+            onClick={() => setActiveTab("editors")}
+          >
+            <i className="icon">👥</i> Quản Lý Editor
+          </button>
+          <button
+            className={activeTab === "pending-editors" ? "active" : ""}
+            onClick={() => setActiveTab("pending-editors")}
+          >
+            <i className="icon">⏳</i> Duyệt Editor
+            {pendingEditors.length > 0 && (
+              <span className="badge">{pendingEditors.length}</span>
+            )}
+          </button>
+          <button
+            className={activeTab === "posts" ? "active" : ""}
+            onClick={() => setActiveTab("posts")}
+          >
+            <i className="icon">📝</i> Duyệt Bài Viết
+            {pendingPosts.length > 0 && (
+              <span className="badge">{pendingPosts.length}</span>
+            )}
+          </button>
+        </nav>
+        <div className="logout-area">
+          <button onClick={handleLogout}>🚪 Đăng Xuất</button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="content">
+        <header>
+          <h1>
+            Xin chào, <span>{currentUser.username}</span>
+          </h1>
+          <p>Chào mừng trở lại trang quản trị hệ thống.</p>
+        </header>
+
+        {/* TAB: OVERVIEW */}
+        {activeTab === "overview" && stats && (
+          <div className="overview-section">
+            <div className="stats-grid">
+              <div className="card blue">
+                <h3>Tổng Lượt Xem</h3>
+                <p className="number">{stats.total_views?.toLocaleString()}</p>
+                <span className="desc">Toàn trang web</span>
+              </div>
+              <div className="card green">
+                <h3>Bài Viết</h3>
+                <p className="number">{stats.total_posts}</p>
+                <span className="desc">Đã xuất bản</span>
+              </div>
+              <div className="card orange">
+                <h3>Chờ Duyệt</h3>
+                <p className="number">{stats.pending_posts}</p>
+                <span className="desc">Cần xử lý ngay</span>
+              </div>
+              <div className="card purple">
+                <h3>Editors</h3>
+                <p className="number">{stats.total_editors}</p>
+                <span className="desc">Nhân sự nội dung</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: EDITORS */}
+        {activeTab === "editors" && (
+          <div className="editors-section">
+            <h2>Danh Sách Editor</h2>
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Editor</th>
+                    <th>Kinh Nghiệm</th>
+                    <th>Bài Viết</th>
+                    <th>Tổng Views</th>
+                    <th>Ngày Tham Gia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editors.map((editor) => (
+                    <tr key={editor.id}>
+                      <td>
+                        <div className="user-info">
+                          <img
+                            src={
+                              editor.avatar ||
+                              "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                            }
+                            alt=""
+                          />
+                          <div>
+                            <strong>{editor.name || editor.username}</strong>
+                            <span>{editor.email}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{editor.years_of_experience} năm</td>
+                      <td>
+                        <span className="tag">{editor.post_count} bài</span>
+                      </td>
+                      <td>{editor.total_views?.toLocaleString()}</td>
+                      <td>{new Date(editor.created_at).toLocaleDateString()}</td>
+                      <td>
+                        <button 
+                          className="btn-reject" 
+                          style={{padding: "5px 10px", fontSize: "12px"}}
+                          onClick={() => handleDeleteEditor(editor.id)}
+                        >
+                          Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: PENDING EDITORS */}
+        {activeTab === "pending-editors" && (
+          <div className="editors-section">
+            <h2>Editor Chờ Duyệt</h2>
+            {pendingEditors.length === 0 ? (
+              <p className="empty-state">🎉 Không có Editor nào cần duyệt!</p>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Editor</th>
+                      <th>Kinh Nghiệm</th>
+                      <th>Ngày Đăng Ký</th>
+                      <th>Hành Động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingEditors.map((editor) => (
+                      <tr key={editor.id}>
+                        <td>
+                          <div className="user-info">
+                            <img
+                              src={
+                                editor.avatar ||
+                                "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                              }
+                              alt=""
+                            />
+                            <div>
+                              <strong>{editor.name || editor.username}</strong>
+                              <span>{editor.email}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{editor.years_of_experience} năm</td>
+                        <td>{new Date(editor.created_at).toLocaleDateString()}</td>
+                        <td>
+                          <div className="actions">
+                            <button
+                              className="btn-approve"
+                              onClick={() => handleApproveEditor(editor.id)}
+                            >
+                              ✅ Duyệt
+                            </button>
+                            <button
+                              className="btn-reject"
+                              onClick={() => handleRejectEditor(editor.id)}
+                            >
+                              ❌ Từ chối
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: POSTS */}
+        {activeTab === "posts" && (
+          <div className="posts-section">
+            <h2>Bài Viết Chờ Duyệt</h2>
+            {pendingPosts.length === 0 ? (
+              <p className="empty-state">🎉 Không có bài viết nào cần duyệt!</p>
+            ) : (
+              <div className="posts-grid">
+                {pendingPosts.map((post) => (
+                  <div className="post-card" key={post.id}>
+                    <div className="post-header">
+                      <span className="category">{post.category_name}</span>
+                      <span className="date">
+                        {new Date(post.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h3>{post.title}</h3>
+                    <div className="author">
+                      Tác giả: <strong>{post.author_name}</strong>
+                    </div>
+                    <div className="actions">
+                      <button
+                        className="btn-approve"
+                        onClick={() => handleApprovePost(post.id)}
+                      >
+                        ✅ Duyệt
+                      </button>
+                      <button
+                        className="btn-reject"
+                        onClick={() => handleRejectPost(post.id)}
+                      >
+                        ❌ Từ chối
+                      </button>
+                      <button
+                        className="btn-reject"
+                        style={{backgroundColor: "#d32f2f"}}
+                        onClick={() => handleDeletePost(post.id)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default AdminDashboard;

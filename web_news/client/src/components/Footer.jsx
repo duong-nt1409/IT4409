@@ -7,7 +7,6 @@ const Footer = () => {
     <footer>
       <div className="footer-container-final">
 
-        {/* --- CỘT TRÁI --- */}
         <div className="col-left">
           <div className="section">
             <h3>TRỤ SỞ CHÍNH</h3>
@@ -35,7 +34,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* --- CỘT PHẢI --- */}
         <div className="col-right">
           <h3>CÔNG TY TNHH MYNEWS</h3>
 
