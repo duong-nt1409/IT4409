@@ -5,7 +5,6 @@ import axios from "../utils/axios";
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  // 1. Kiểm tra xem có user trong LocalStorage không khi web vừa load
   const [currentUser, setCurrentUser] = useState(
     JSON.parse(localStorage.getItem("user")) || null
   );
@@ -14,17 +13,15 @@ export const AuthContextProvider = ({ children }) => {
     setCurrentUser(userData);
   };
 
-  // 2. Hàm Đăng Nhập (Gọi API xong thì lưu vào State)
   const login = async (inputs) => {
     const res = await axios.post("/auth/login", inputs);
     persistUser(res.data);
+    return res.data;
   };
 
-  // 2b. Hàm đăng nhập dành riêng cho Editor
   const editorLogin = async (inputs) => {
     const res = await axios.post("/auth/editor-login", inputs);
 
-    // Kiểm tra role_id nếu có để đảm bảo đúng quyền Editor (role_id = 2)
     if (res.data.role_id && Number(res.data.role_id) !== 2) {
       throw new Error("Tài khoản này không có quyền Editor");
     }
@@ -32,17 +29,19 @@ export const AuthContextProvider = ({ children }) => {
     persistUser(res.data);
   };
 
-  // 3. Hàm Đăng Xuất
   const logout = async () => {
-    await axios.post("/auth/logout");
+    try {
+      await axios.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout failed on server:", err);
+    }
     setCurrentUser(null);
-  };
-
-  // 4. Tự động lưu vào LocalStorage mỗi khi currentUser thay đổi
+    localStorage.removeItem("user");
+  }; 
+  
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(currentUser));
   }, [currentUser]);
-
   return (
     <AuthContext.Provider
       value={{ currentUser, login, editorLogin, logout }}

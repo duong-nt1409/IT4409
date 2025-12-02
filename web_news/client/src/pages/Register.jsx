@@ -28,10 +28,7 @@ const Register = () => {
 
   return (
     <div className="auth">
-      {/* LƯU Ý: Xóa thẻ h1 ở đây đi */}
-      
       <form>
-        {/* VÀ ĐƯA NÓ VÀO TRONG NÀY */}
         <h1>Đăng Ký</h1> 
         
         <input

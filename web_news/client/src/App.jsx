@@ -14,6 +14,7 @@ import ErrorPage from "./pages/Error";
 import LoginEditor from "./pages/Login-Editor";
 import RegisterEditor from "./pages/Register-Editor";
 import EditorPage from "./pages/Page-Editor";
+import AdminDashboard from "./pages/AdminDashboard"; // Import Admin Dashboard
 import "./style.scss";
 
 const Layout = () => {
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login />, errorElement: <ErrorPage /> },
   { path: "/editor-login", element: <LoginEditor />, errorElement: <ErrorPage /> },
   { path: "/register-editor", element: <RegisterEditor />, errorElement: <ErrorPage /> },
+  { path: "/admin", element: <AdminDashboard />, errorElement: <ErrorPage /> }, // Route Admin riêng biệt (không dùng Layout chung)
   { path: "*", element: <ErrorPage /> },
 ]);
 

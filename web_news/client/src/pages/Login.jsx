@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react"; // Thêm useContext
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/authContext"; // Import Context
+import { AuthContext } from "../context/authContext";
 
 const Login = () => {
   const [inputs, setInputs] = useState({
@@ -11,8 +11,20 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  // Lấy hàm login từ Context
-  const { login } = useContext(AuthContext);
+  const { login, currentUser } = useContext(AuthContext);
+
+  // Redirect nếu đã đăng nhập
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role_id === 1) {
+        navigate("/admin");
+      } else if (currentUser.role_id === 2) {
+        navigate("/editor");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setInputs((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -21,13 +33,16 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Gọi hàm login của Context (nó sẽ tự gọi API và lưu user)
-      await login(inputs);
+      const user = await login(inputs);
       
-      // Chuyển hướng về Trang Chủ
-      navigate("/");
+      if (user.role_id === 1) {
+        navigate("/admin");
+      } else if (user.role_id === 2) {
+        navigate("/editor");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
-      // Xử lý lỗi nếu API trả về lỗi
       setError(err.response?.data || "Đã xảy ra lỗi đăng nhập");
     }
   };
