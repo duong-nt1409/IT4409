@@ -51,7 +51,8 @@ const initQuery = `
 ADD COLUMN phone VARCHAR(20),
 ADD COLUMN address TEXT,
 ADD COLUMN dob DATE, -- Ngày sinh
-ADD COLUMN gender ENUM('male', 'female', 'other') DEFAULT 'male';
+ADD COLUMN gender ENUM('male', 'female', 'other') DEFAULT 'male',
+ADD COLUMN status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending';
 
   -- 4. Bảng Categories (Danh mục)
   CREATE TABLE Categories (
@@ -153,10 +154,10 @@ CREATE TABLE IF NOT EXISTS ReadHistory (
   INSERT INTO Roles (name) VALUES ('Admin'), ('Editor'), ('User');
 
   -- 2. Users (Pass: 123456)
-  INSERT INTO Users (username, email, password_hash, role_id, name, age, years_of_experience) VALUES 
-  ('admin', 'admin@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 1, 'Admin User', 30, 5),
-  ('user1', 'user1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 3, 'Regular User', 25, 0),
-  ('editor1', 'editor1@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 2, 'Nguyễn Văn Editor', 28, 3);
+  INSERT INTO Users (username, email, password_hash, role_id, name, age, years_of_experience, status) VALUES 
+  ('admin', 'admin@gmail.com', '$2b$10$fGPbmDB.1xP4mT5PBFxt3OCxQJSflwGB/nkTKHyxq0ARHF1LFYW2u', 1, 'Admin User', 30, 5, 'approved'),
+  ('user1', 'user1@gmail.com', '$2b$10$fGPbmDB.1xP4mT5PBFxt3OCxQJSflwGB/nkTKHyxq0ARHF1LFYW2u', 3, 'Regular User', 25, 0, 'approved'),
+  ('editor1', 'editor1@gmail.com', '$2b$10$fGPbmDB.1xP4mT5PBFxt3OCxQJSflwGB/nkTKHyxq0ARHF1LFYW2u', 2, 'Nguyễn Văn Editor', 28, 3, 'approved');
 
   -- 3. Categories
   INSERT INTO Categories (name, description) VALUES 

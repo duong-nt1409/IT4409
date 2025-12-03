@@ -1058,3 +1058,325 @@ footer {
     .main-profile .form-row { flex-direction: column; }
   }
 }
+
+// --- STYLE TRANG VIẾT BÀI (WRITE) ---
+.add {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 20px 50px;
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+
+  // Cột nội dung chính (70%)
+  .content {
+    flex: 7;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    // Input tiêu đề
+    input[type="text"] {
+      width: 100%;
+      padding: 18px 20px;
+      font-size: 32px;
+      font-weight: 700;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.3s ease;
+      background: white;
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+      &::placeholder {
+        color: #999;
+        font-weight: 400;
+      }
+
+      &:focus {
+        border-color: $dark-green;
+        box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+      }
+    }
+
+    // Container cho editor
+    .editorContainer {
+      background: white;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+
+      &:focus-within {
+        border-color: $dark-green;
+        box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+      }
+
+      .editor {
+        .ql-container {
+          min-height: 400px;
+          font-size: 16px;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .ql-editor {
+          min-height: 400px;
+          line-height: 1.8;
+          color: #444;
+        }
+
+        .ql-toolbar {
+          border-top: none;
+          border-left: none;
+          border-right: none;
+          border-bottom: 1px solid #e0e0e0;
+          background: #fafafa;
+        }
+      }
+    }
+  }
+
+  // Cột menu bên phải (30%)
+  .menu {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    // Card chứa thông tin và actions
+    .item {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid #f0f0f0;
+
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      // Thông tin trạng thái
+      span {
+        display: block;
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        background: #f9f9f9;
+        border-radius: 6px;
+
+        b {
+          color: #333;
+          font-weight: 600;
+        }
+      }
+
+      // Input group cho thumbnail
+      .input-group {
+        margin-top: 20px;
+
+        label {
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+          width: 100%;
+          padding: 10px 12px;
+          font-size: 14px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          outline: none;
+          transition: all 0.2s ease;
+          margin-top: 5px;
+
+          &::placeholder {
+            color: #999;
+          }
+
+          &:focus {
+            border-color: $dark-green;
+            box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.1);
+          }
+        }
+
+        img {
+          width: 100%;
+          margin-top: 12px;
+          height: 180px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+        }
+      }
+
+      // Error message
+      .error-message {
+        padding: 12px 16px;
+        margin-top: 16px;
+        background: #ffebee;
+        color: #c62828;
+        border-radius: 6px;
+        font-size: 14px;
+        border: 1px solid #ef5350;
+        line-height: 1.5;
+      }
+
+      // Success message
+      .success-message {
+        padding: 12px 16px;
+        margin-top: 16px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 6px;
+        font-size: 14px;
+        border: 1px solid #4caf50;
+        line-height: 1.5;
+        
+        small {
+          display: block;
+          margin-top: 4px;
+          font-size: 12px;
+          opacity: 0.8;
+        }
+      }
+
+      // Buttons container
+      .buttons {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #f0f0f0;
+
+        button {
+          width: 100%;
+          padding: 14px 24px;
+          font-size: 16px;
+          font-weight: 600;
+          background: $dark-green;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+
+          &:hover:not(:disabled) {
+            background: #006666;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 128, 128, 0.3);
+          }
+
+          &:active:not(:disabled) {
+            transform: translateY(0);
+          }
+
+          &:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+          }
+        }
+      }
+
+      // Category selection
+      .cat {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+
+        &:hover {
+          background: #f9f9f9;
+        }
+
+        input[type="radio"] {
+          width: 18px;
+          height: 18px;
+          margin-right: 12px;
+          cursor: pointer;
+          accent-color: $dark-green;
+        }
+
+        label {
+          font-size: 15px;
+          color: #444;
+          cursor: pointer;
+          font-weight: 500;
+          flex: 1;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: $dark-green;
+          }
+        }
+
+        input[type="radio"]:checked + label {
+          color: $dark-green;
+          font-weight: 600;
+        }
+
+        &:has(input[type="radio"]:checked) {
+          background: rgba(0, 128, 128, 0.08);
+          border-left: 3px solid $dark-green;
+        }
+      }
+    }
+  }
+}
+
+// Responsive cho Write page
+@media (max-width: 968px) {
+  .add {
+    flex-direction: column;
+    padding: 100px 15px 30px;
+
+    .content {
+      flex: 1;
+      
+      input[type="text"] {
+        font-size: 24px;
+        padding: 14px 16px;
+      }
+
+      .editorContainer .editor {
+        .ql-container,
+        .ql-editor {
+          min-height: 300px;
+        }
+      }
+    }
+
+    .menu {
+      flex: 1;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .add {
+    .content {
+      input[type="text"] {
+        font-size: 20px;
+        padding: 12px 14px;
+      }
+    }
+
+    .menu .item {
+      padding: 18px;
+    }
+  }
+}

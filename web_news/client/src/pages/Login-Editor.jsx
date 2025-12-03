@@ -28,34 +28,39 @@ const LoginEditor = () => {
       navigate("/editor");
     } catch (err) {
       // Xử lý lỗi nếu API trả về lỗi
-      setError(err.response?.data || "Đã xảy ra lỗi đăng nhập");
+      const errorMessage = err.response?.data || err.message || "Đã xảy ra lỗi đăng nhập";
+      setError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
       console.log(err);
     }
   };
 
   return (
     <div className="auth">
-      <form>
+      <form onSubmit={handleSubmit}>
         <h1>Đăng Nhập Editor</h1>
         
         <input
           type="text"
           placeholder="username"
           name="username"
+          value={inputs.username}
           onChange={handleChange}
+          required
         />
         <input
           type="password"
           placeholder="password"
-          name="password" 
+          name="password"
+          value={inputs.password}
           onChange={handleChange}
+          required
         />
-        <button onClick={handleSubmit}>Đăng Nhập</button>
-        {err && <p>{err}</p>}
+        <button type="submit">Đăng Nhập</button>
+        {err && <p style={{color: 'red'}}>{err}</p>}
         <span>
           Bạn chưa có tài khoản? <Link to="/register-editor">Đăng ký</Link>
         </span>
-        <button onClick={() => navigate("/")}>Home</button>
+        <button type="button" onClick={() => navigate("/")}>Home</button>
       </form>
     </div>
   );

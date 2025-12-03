@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import axios from "../utils/axios";
@@ -11,25 +11,46 @@ const EditorPage = () => {
   const { currentUser, logout } = useContext(AuthContext);
   const [posts, setPosts] = useState([]);
 
-  useEffect(() => {
-    if (!currentUser) {
-      navigate("/");
-    } else {
-      fetchMyPosts();
-    }
-  }, [currentUser, navigate]);
-
-  const fetchMyPosts = async () => {
+  const fetchMyPosts = useCallback(async () => {
+    if (!currentUser) return;
     try {
       const res = await axios.get(`/posts?uid=${currentUser.id}`);
       setPosts(res.data);
     } catch (err) {
       console.log(err);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate("/");
+      return;
+    }
+    fetchMyPosts();
+  }, [currentUser, navigate, fetchMyPosts]);
 
   const handleDelete = async (id) => {
-    alert("Chức năng xóa đang phát triển (Vui lòng tự implement logic API)");
+    if (!currentUser) {
+      alert("Bạn cần đăng nhập để xóa bài viết!");
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa bài viết này?");
+    if (!confirmed) return;
+
+    try {
+      await axios.delete(`/posts/${id}`, {
+        data: { user_id: currentUser.id }
+      });
+      
+      // Refresh the posts list
+      fetchMyPosts();
+      alert("Bài viết đã được xóa thành công!");
+    } catch (err) {
+      console.error("Error deleting post:", err);
+      alert(err.response?.data || "Có lỗi xảy ra khi xóa bài viết!");
+    }
   };
 
   if (!currentUser) return null;

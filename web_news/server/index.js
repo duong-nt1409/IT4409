@@ -57,6 +57,15 @@ app.get("/", (req, res) => {
   res.json("API Server is running...");
 });
 
+// Add logging middleware for posts
+app.use("/api/posts", (req, res, next) => {
+  console.log(`📝 POSTS API: ${req.method} ${req.path}`);
+  if (req.method === 'POST') {
+    console.log("Request body:", req.body);
+  }
+  next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
  app.use("/api/admin", adminRoutes); 

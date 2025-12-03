@@ -69,8 +69,34 @@ connection.query("SHOW DATABASES LIKE ?", [process.env.DB_NAME || "web_news"], (
         } else {
           console.table(users);
         }
+        console.log();
 
-        connection.end();
+        // Show today's posts
+        const todayQuery = `
+          SELECT p.id, p.title, u.username, c.name as category, p.status, p.is_featured, p.created_at
+          FROM Posts p
+          LEFT JOIN Users u ON u.id = p.user_id
+          LEFT JOIN Categories c ON c.id = p.category_id
+          WHERE DATE(p.created_at) = CURDATE()
+          ORDER BY p.created_at DESC
+        `;
+
+        connection.query(todayQuery, (err, todayPosts) => {
+          if (err) {
+            console.error("❌ Error fetching today's posts:", err);
+            connection.end();
+            return;
+          }
+
+          console.log(`📰 Posts created today (${todayPosts.length} total):`);
+          if (todayPosts.length === 0) {
+            console.log("   No posts found for today");
+          } else {
+            console.table(todayPosts);
+          }
+
+          connection.end();
+        });
       });
     });
   });
