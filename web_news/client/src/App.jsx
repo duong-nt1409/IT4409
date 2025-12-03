@@ -14,6 +14,9 @@ import ErrorPage from "./pages/Error";
 import LoginEditor from "./pages/Login-Editor";
 import RegisterEditor from "./pages/Register-Editor";
 import EditorPage from "./pages/Page-Editor";
+import Profile from "./pages/Profile";
+import SavedPosts from "./pages/SavedPosts"; 
+import ViewedPosts from "./pages/ViewedPosts"
 import AdminDashboard from "./pages/AdminDashboard"; // Import Admin Dashboard
 import "./style.scss";
 
@@ -51,6 +54,9 @@ const router = createBrowserRouter([
   { path: "/register-editor", element: <RegisterEditor />, errorElement: <ErrorPage /> },
   { path: "/admin", element: <AdminDashboard />, errorElement: <ErrorPage /> }, // Route Admin riêng biệt (không dùng Layout chung)
   { path: "*", element: <ErrorPage /> },
+  { path: "/profile", element: <Profile /> },
+  { path: "/saved-posts", element: <SavedPosts /> }, 
+      { path: "/viewed-posts", element: <ViewedPosts /> },
 ]);
 
 function App() {

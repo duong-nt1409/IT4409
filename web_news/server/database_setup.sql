@@ -69,3 +69,31 @@
     FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
   );
+-- 9. Tạo bảng Likes (Lưu ai đã like bài nào)
+CREATE TABLE IF NOT EXISTS Likes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  post_id INT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_like (user_id, post_id) -- Mỗi người chỉ like 1 lần/bài
+);
+-- 10.Bảng Bookmarks (Lưu bài viết)
+CREATE TABLE IF NOT EXISTS Bookmarks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  post_id INT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_bookmark (user_id, post_id), -- Mỗi bài chỉ lưu 1 lần
+  FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE
+);
+-- 11. Bảng ReadHistory (Lịch sử xem)
+CREATE TABLE IF NOT EXISTS ReadHistory (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  post_id INT NOT NULL,
+  viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES Posts(id) ON DELETE CASCADE
+);
