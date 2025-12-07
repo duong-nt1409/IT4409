@@ -2,7 +2,6 @@ import { db } from "../db.js";
 
 // --- BOOKMARK (LƯU BÀI) ---
 
-// Lấy danh sách ID bài đã lưu của User (để tô màu nút Save)
 export const getSavedPostIds = (req, res) => {
   const q = "SELECT post_id FROM Bookmarks WHERE user_id = ?";
   db.query(q, [req.query.userId], (err, data) => {
@@ -11,24 +10,20 @@ export const getSavedPostIds = (req, res) => {
   });
 };
 
-// Toggle: Lưu hoặc Bỏ lưu
 export const toggleBookmark = (req, res) => {
   const { user_id, post_id } = req.body;
 
-  // Kiểm tra xem đã lưu chưa
   const qCheck = "SELECT * FROM Bookmarks WHERE user_id = ? AND post_id = ?";
   db.query(qCheck, [user_id, post_id], (err, data) => {
     if (err) return res.status(500).json(err);
 
     if (data.length > 0) {
-      // Đã lưu -> Xóa (Bỏ lưu)
       const qDelete = "DELETE FROM Bookmarks WHERE user_id = ? AND post_id = ?";
       db.query(qDelete, [user_id, post_id], (err, data) => {
         if (err) return res.status(500).json(err);
         return res.status(200).json("Đã bỏ lưu bài viết.");
       });
     } else {
-      // Chưa lưu -> Thêm mới
       const qInsert = "INSERT INTO Bookmarks (user_id, post_id) VALUES (?, ?)";
       db.query(qInsert, [user_id, post_id], (err, data) => {
         if (err) return res.status(500).json(err);
@@ -38,7 +33,6 @@ export const toggleBookmark = (req, res) => {
   });
 };
 
-// Lấy danh sách đầy đủ bài đã lưu (cho trang SavedPosts)
 export const getSavedPosts = (req, res) => {
   const userId = req.query.userId;
   const q = `
@@ -54,7 +48,6 @@ export const getSavedPosts = (req, res) => {
     
   db.query(q, [userId, userId, userId], (err, data) => {
     if (err) return res.status(500).json(err);
-    // Chuyển đổi 1/0 thành boolean true/false cho dễ dùng
     const enrichedData = data.map(post => ({
       ...post,
       is_saved: post.is_saved > 0,
@@ -62,18 +55,26 @@ export const getSavedPosts = (req, res) => {
     }));
     return res.status(200).json(enrichedData);
   });
-}
+};
 
 // --- HISTORY (LỊCH SỬ XEM) ---
 
 export const addToHistory = (req, res) => {
   const { user_id, post_id } = req.body;
-  // Xóa cũ thêm mới để cập nhật thời gian xem mới nhất (hoặc dùng INSERT IGNORE nếu muốn lưu lần đầu)
-  const q = "INSERT INTO ReadHistory (user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
-  
-  db.query(q, [user_id, post_id], (err, data) => {
+
+  // 1. Xóa lịch sử cũ của bài này (để tránh trùng lặp và cập nhật thời gian mới nhất)
+  const qDelete = "DELETE FROM ReadHistory WHERE user_id = ? AND post_id = ?";
+
+  db.query(qDelete, [user_id, post_id], (err, data) => {
     if (err) return res.status(500).json(err);
-    return res.status(200).json("Đã ghi lịch sử.");
+
+    // 2. Thêm lại vào bảng
+    const qInsert = "INSERT INTO ReadHistory (user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
+    
+    db.query(qInsert, [user_id, post_id], (err, data) => {
+       if (err) return res.status(500).json(err);
+       return res.status(200).json("Đã cập nhật lịch sử.");
+    });
   });
 };
 
@@ -100,10 +101,10 @@ export const getHistoryPosts = (req, res) => {
     return res.status(200).json(enrichedData);
   });
 };
-export const deleteHistory = (req, res) => {
-  // Lấy userId từ query params
-  const userId = req.query.userId; 
 
+// --- QUAN TRỌNG: HÀM NÀY ĐANG BỊ THIẾU ---
+export const deleteHistory = (req, res) => {
+  const userId = req.query.userId;
   const q = "DELETE FROM ReadHistory WHERE user_id = ?";
 
   db.query(q, [userId], (err, data) => {
