@@ -31,9 +31,21 @@ const RegisterEditor = () => {
           : null,
       };
       await axios.post("/auth/editor-register", payload);
-      navigate("/editor-login");
+      navigate("/login");
     } catch (error) {
-      setError(error.response?.data || "Đã xảy ra lỗi đăng ký!");
+      // Extract error message from response
+      let errorMessage = "Đã xảy ra lỗi đăng ký!";
+      if (error.response?.data) {
+        // If data is a string, use it directly
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } 
+        // If data is an object, try to extract message
+        else if (typeof error.response.data === 'object') {
+          errorMessage = error.response.data.message || error.response.data.sqlMessage || JSON.stringify(error.response.data);
+        }
+      }
+      setError(errorMessage);
       console.error(error);
     }
   };
@@ -96,9 +108,9 @@ const RegisterEditor = () => {
         {err && <p>{err}</p>}
         <span>
           Bạn đã có tài khoản?{" "}
-          <Link to="/editor-login">Đăng nhập Editor</Link>
+          <Link to="/login">Đăng nhập Editor</Link>
         </span>
-        <button onClick={() => navigate("/")}>Home</button>
+        <button onClick={() => navigate("/login")}>Home</button>
       </form>
     </div>
   );

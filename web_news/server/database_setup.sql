@@ -9,7 +9,7 @@
     name VARCHAR(50) NOT NULL UNIQUE
   );
 
-  -- 3. Bảng Users (Có avatar)
+  -- 3. Bảng Users (Có avatar và thông tin editor)
   CREATE TABLE Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -17,6 +17,14 @@
     password_hash VARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
     avatar VARCHAR(255) DEFAULT 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+    name VARCHAR(100),
+    age INT,
+    years_of_experience INT,
+    phone VARCHAR(20),
+    address TEXT,
+    dob DATE,
+    gender ENUM('male', 'female', 'other') DEFAULT 'male',
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES Roles(id)
   );

@@ -55,6 +55,8 @@ const EditorPage = () => {
 
   if (!currentUser) return null;
 
+  const isPending = currentUser.status === 'pending';
+
   return (
     <div className="editor-dashboard">
       <div className="sidebar">
@@ -76,10 +78,29 @@ const EditorPage = () => {
       <div className="main-content-editor">
         <div className="header">
           <h1>Quản lý bài viết</h1>
-          <Link to="/write" className="btn-create">
-            + Viết bài mới
-          </Link>
+          {isPending ? (
+            <button className="btn-create" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+              + Viết bài mới
+            </button>
+          ) : (
+            <Link to="/write" className="btn-create">
+              + Viết bài mới
+            </Link>
+          )}
         </div>
+
+        {isPending && (
+          <div style={{ 
+            padding: '15px', 
+            marginBottom: '20px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107', 
+            borderRadius: '5px',
+            color: '#856404'
+          }}>
+            <strong>Thông báo:</strong> Tài khoản của bạn đang chờ được duyệt. Bạn chưa có quyền viết bài viết mới. Vui lòng chờ quản trị viên phê duyệt tài khoản của bạn.
+          </div>
+        )}
 
         <div className="posts-list">
           {posts.length === 0 ? (
@@ -112,12 +133,20 @@ const EditorPage = () => {
                     </td>
                     <td>
                       <div className="actions">
-                        <Link to={`/write?edit=${post.id}`} state={post} className="btn-edit">
-                          Sửa
-                        </Link>
+                        {isPending ? (
+                          <button className="btn-edit" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                            Sửa
+                          </button>
+                        ) : (
+                          <Link to={`/write?edit=${post.id}`} state={post} className="btn-edit">
+                            Sửa
+                          </Link>
+                        )}
                         <button
                           onClick={() => handleDelete(post.id)}
                           className="btn-delete"
+                          disabled={isPending}
+                          style={isPending ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                         >
                           Xóa
                         </button>

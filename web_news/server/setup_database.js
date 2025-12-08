@@ -154,6 +154,7 @@ CREATE TABLE IF NOT EXISTS ReadHistory (
   INSERT INTO Roles (name) VALUES ('Admin'), ('Editor'), ('User');
 
   -- 2. Users (Pass: 123456)
+  ('admin', 'admin@gmail.com', '$2a$10$N.zmdr9k7uOcQb376.e.oeJp.wz.iY/7x1.x1.x1.x1.x1.x1.x1.', 1, 'Admin User', 30, 5),
   INSERT INTO Users (username, email, password_hash, role_id, name, age, years_of_experience, status) VALUES 
   ('admin', 'admin@gmail.com', '$2b$10$fGPbmDB.1xP4mT5PBFxt3OCxQJSflwGB/nkTKHyxq0ARHF1LFYW2u', 1, 'Admin User', 30, 5, 'approved'),
   ('user1', 'user1@gmail.com', '$2b$10$fGPbmDB.1xP4mT5PBFxt3OCxQJSflwGB/nkTKHyxq0ARHF1LFYW2u', 3, 'Regular User', 25, 0, 'approved'),

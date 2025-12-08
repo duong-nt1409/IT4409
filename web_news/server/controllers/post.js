@@ -85,7 +85,7 @@ export const addPost = (req, res) => {
   // Insert post with approved status
   const q = `
     INSERT INTO Posts (user_id, category_id, title, content, thumbnail, status) 
-    VALUES (?, ?, ?, ?, ?, 'approved')
+    VALUES (?, ?, ?, ?, ?, 'pending')
   `;
 
   const values = [

@@ -11,7 +11,6 @@ import Write from "./pages/Write";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ErrorPage from "./pages/Error";
-import LoginEditor from "./pages/Login-Editor";
 import RegisterEditor from "./pages/Register-Editor";
 import EditorPage from "./pages/Page-Editor";
 import Profile from "./pages/Profile";
@@ -50,7 +49,6 @@ const router = createBrowserRouter([
   },
   { path: "/register", element: <Register />, errorElement: <ErrorPage /> },
   { path: "/login", element: <Login />, errorElement: <ErrorPage /> },
-  { path: "/editor-login", element: <LoginEditor />, errorElement: <ErrorPage /> },
   { path: "/register-editor", element: <RegisterEditor />, errorElement: <ErrorPage /> },
   { path: "/admin", element: <AdminDashboard />, errorElement: <ErrorPage /> }, // Route Admin riêng biệt (không dùng Layout chung)
   { path: "*", element: <ErrorPage /> },

@@ -213,7 +213,7 @@ const Write = () => {
             <div className="success-message">
               ✅ {isEditMode 
                 ? "Bài viết đã được cập nhật thành công!" 
-                : "Bài viết đã được tạo thành công với trạng thái 'approved'!"}
+                : "Bài viết đã được tạo thành công với trạng thái 'pending'!"} 
               <br />
               <small>{isEditMode 
                 ? "Các thay đổi đã được lưu." 

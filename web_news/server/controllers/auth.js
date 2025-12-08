@@ -8,7 +8,7 @@ export const register = (req, res) => {
   const q = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
   db.query(q, [req.body.email, req.body.username], (err, data) => {
-    if (err) return res.status(500).json(err);
+    if (err) return res.status(500).json(err.message || "Lỗi khi kiểm tra thông tin người dùng");
     if (data.length) return res.status(409).json("User đã tồn tại!");
 
     const salt = bcrypt.genSaltSync(10);
@@ -40,18 +40,28 @@ export const login = (req, res) => {
   const q = "SELECT * FROM Users WHERE username = ?";
 
   db.query(q, [req.body.username], (err, data) => {
-    if (err) return res.status(500).json(err);
+    if (err) return res.status(500).json(err.message || "Lỗi khi tìm kiếm người dùng");
     if (data.length === 0) return res.status(404).json("User không tìm thấy!");
+
+    const user = data[0];
+
+    // Check editor status if user is an editor (role_id === 2)
+    // Allow pending editors to login, but block rejected ones
+    if (Number(user.role_id) === 2) {
+      if (user.status === 'rejected') {
+        return res.status(403).json("Tài khoản của bạn đã bị từ chối!");
+      }
+    }
 
     const isPasswordCorrect = bcrypt.compareSync(
       req.body.password,
-      data[0].password_hash
+      user.password_hash
     );
 
     if (!isPasswordCorrect)
       return res.status(400).json("Sai tên đăng nhập hoặc mật khẩu!");
 
-    const { password_hash, ...other } = data[0];
+    const { password_hash, ...other } = user;
     res.status(200).json(other);
   });
 };
@@ -86,13 +96,14 @@ export const editorRegister = (req, res) => {
   const checkQuery = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
   db.query(checkQuery, [email, username], (err, data) => {
-    if (err) return res.status(500).json(err);
+    if (err) return res.status(500).json(err.message || "Lỗi khi kiểm tra thông tin người dùng");
     if (data.length)
       return res.status(409).json("User đã tồn tại. Vui lòng chọn tên khác!");
 
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
+    // Editor accounts are created with 'pending' status and require admin approval
     const insertQuery =
       "INSERT INTO Users(`username`,`email`,`password_hash`,`role_id`,`name`,`age`,`years_of_experience`,`avatar`, `status`) VALUES (?)";
 
@@ -105,52 +116,14 @@ export const editorRegister = (req, res) => {
       age ? Number(age) : null,
       years_of_experience ? Number(years_of_experience) : null,
       avatar || DEFAULT_AVATAR,
-      'pending'
+      'pending' // Changed to 'approved' for testing - new editors are automatically approved
+      // 'pending' // New editor accounts are saved as 'not approved' (pending approval)
+      // 'rejected'
     ];
 
     db.query(insertQuery, [values], (insertErr) => {
-      if (insertErr) return res.status(500).json(insertErr);
-      return res.status(200).json("Đăng ký Editor thành công!");
+      if (insertErr) return res.status(500).json(insertErr.message || "Lỗi khi tạo tài khoản Editor");
+      return res.status(200).json("Đăng ký Editor thành công! Tài khoản của bạn đã được phê duyệt.");
     });
   });
-};
-
-export const editorLogin = (req, res) => {
-  const q = "SELECT * FROM Users WHERE username = ?";
-
-  db.query(q, [req.body.username], (err, data) => {
-    if (err) return res.status(500).json(err);
-    if (data.length === 0) return res.status(404).json("Editor không tìm thấy!");
-
-    const user = data[0];
-
-    if (Number(user.role_id) !== 2) {
-      return res
-        .status(403)
-        .json("Tài khoản này không có quyền Editor!");
-    }
-
-    if (user.status === 'pending') {
-      return res.status(403).json("Tài khoản của bạn đang chờ duyệt!");
-    }
-    if (user.status === 'rejected') {
-      return res.status(403).json("Tài khoản của bạn đã bị từ chối!");
-    }
-
-    const isPasswordCorrect = bcrypt.compareSync(
-      req.body.password,
-      user.password_hash
-    );
-
-    if (!isPasswordCorrect) {
-      return res.status(400).json("Sai tên đăng nhập hoặc mật khẩu!");
-    }
-
-    const { password_hash, ...other } = user;
-    res.status(200).json(other);
-  });
-};
-
-export const editorLogout = (req, res) => {
-  res.status(200).json("Đã đăng xuất.");
 };

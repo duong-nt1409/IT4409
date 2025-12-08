@@ -19,16 +19,6 @@ export const AuthContextProvider = ({ children }) => {
     return res.data;
   };
 
-  const editorLogin = async (inputs) => {
-    const res = await axios.post("/auth/editor-login", inputs);
-
-    if (res.data.role_id && Number(res.data.role_id) !== 2) {
-      throw new Error("Tài khoản này không có quyền Editor");
-    }
-
-    persistUser(res.data);
-  };
-
   const logout = async () => {
     try {
       await axios.post("/auth/logout");
@@ -44,7 +34,7 @@ export const AuthContextProvider = ({ children }) => {
   }, [currentUser]);
   return (
     <AuthContext.Provider
-      value={{ currentUser, login, editorLogin, logout }}
+      value={{ currentUser, login, logout }}
     >
       {children}
     </AuthContext.Provider>

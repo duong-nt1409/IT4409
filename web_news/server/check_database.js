@@ -56,7 +56,7 @@ connection.query("SHOW DATABASES LIKE ?", [process.env.DB_NAME || "web_news"], (
       console.log();
 
       // Show all users (without passwords)
-      connection.query("SELECT id, username, email, created_at FROM users", (err, users) => {
+      connection.query("SELECT id, username,status, email, created_at FROM users", (err, users) => {
         if (err) {
           console.error("❌ Error fetching users:", err);
           connection.end();
