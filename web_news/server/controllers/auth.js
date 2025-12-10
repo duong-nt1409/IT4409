@@ -1,5 +1,6 @@
 import { db } from "../db.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken"; // <--- 1. BẮT BUỘC PHẢI IMPORT CÁI NÀY
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 const EDITOR_ROLE_ID = 2;
@@ -45,6 +46,7 @@ export const login = (req, res) => {
 
     const user = data[0];
 
+    // --- LOGIC EDITOR CỦA BẠN (GIỮ NGUYÊN) ---
     // Check editor status if user is an editor (role_id === 2)
     // Allow pending editors to login, but block rejected ones
     if (Number(user.role_id) === 2) {
@@ -52,6 +54,7 @@ export const login = (req, res) => {
         return res.status(403).json("Tài khoản của bạn đã bị từ chối!");
       }
     }
+    // -----------------------------------------
 
     const isPasswordCorrect = bcrypt.compareSync(
       req.body.password,
@@ -61,21 +64,34 @@ export const login = (req, res) => {
     if (!isPasswordCorrect)
       return res.status(400).json("Sai tên đăng nhập hoặc mật khẩu!");
 
+    // --- PHẦN SỬA ĐỔI QUAN TRỌNG ĐỂ HẾT LỖI 401 ---
+    
+    // 1. Tạo Token
+    const token = jwt.sign({ id: user.id }, "jwtkey");
+
     const { password_hash, ...other } = user;
-    res.status(200).json(other);
+
+    // 2. Gửi Cookie về (Bắt buộc phải có đoạn này)
+    res
+      .cookie("access_token", token, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true
+      })
+      .status(200)
+      .json(other);
   });
 };
 
 export const logout = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(500).json("Không thể đăng xuất");
-    
-    res.clearCookie("connect.sid");
-    res.status(200).json("Đã đăng xuất.");
-  });
+  // Sửa lại logout để xóa đúng cái cookie access_token
+  res.clearCookie("access_token", {
+    sameSite: "none",
+    secure: true
+  }).status(200).json("Đã đăng xuất.");
 };
 
-
+// --- LOGIC EDITOR REGISTER (GIỮ NGUYÊN 100%) ---
 export const editorRegister = (req, res) => {
   const {
     username,
