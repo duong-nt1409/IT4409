@@ -127,7 +127,7 @@ body {
 // 3. STYLE HOME (Căn giữa, đẩy nội dung xuống)
 .home {
   width: 100%;
-  max-width: 1140px; // Rộng hơn chút để chứa 2 cột
+  max-width: 900px; // Rộng hơn chút để chứa 2 cột
   margin: 0 auto;
   padding-top: 100px;
   padding-bottom: 50px;
@@ -609,8 +609,10 @@ footer {
 .single {
   display: flex;
   gap: 50px;
-  padding-top: 20px;
-
+  padding-top: 100px;
+  padding-bottom: 50px;
+  max-width: 900px;
+  margin: 0 auto;
   // Cột nội dung (70%)
   .content {
     flex: 5;

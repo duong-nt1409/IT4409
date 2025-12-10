@@ -100,3 +100,13 @@ export const updateUserStatus = (req, res) => {
     return res.status(200).json("Cập nhật trạng thái Editor thành công!");
   });
 };
+
+export const deletePost = (req, res) => {
+  const postId = req.params.id;
+  const q = "DELETE FROM Posts WHERE id = ?";
+
+  db.query(q, [postId], (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json("Đã xóa bài viết!");
+  });
+};
