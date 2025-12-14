@@ -132,7 +132,7 @@ export const editorRegister = (req, res) => {
       age ? Number(age) : null,
       years_of_experience ? Number(years_of_experience) : null,
       avatar || DEFAULT_AVATAR,
-      'pending' // Changed to 'approved' for testing - new editors are automatically approved
+      'approved' // Changed to 'approved' for testing - new editors are automatically approved
       // 'pending' // New editor accounts are saved as 'not approved' (pending approval)
       // 'rejected'
     ];

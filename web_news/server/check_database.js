@@ -71,7 +71,23 @@ connection.query("SHOW DATABASES LIKE ?", [process.env.DB_NAME || "web_news"], (
         }
         console.log();
 
-        // Show today's posts
+        // Show all categories
+        connection.query("SELECT id, name, description FROM Categories ORDER BY id ASC", (err, categories) => {
+          if (err) {
+            console.error("❌ Error fetching categories:", err);
+            connection.end();
+            return;
+          }
+
+          console.log(`📂 Categories in database (${categories.length} total):`);
+          if (categories.length === 0) {
+            console.log("   No categories found");
+          } else {
+            console.table(categories);
+          }
+          console.log();
+
+          // Show today's posts
         const todayQuery = `
           SELECT p.id, p.title, u.username, c.name as category, p.status, p.is_featured, p.created_at
           FROM Posts p
@@ -96,6 +112,7 @@ connection.query("SHOW DATABASES LIKE ?", [process.env.DB_NAME || "web_news"], (
           }
 
           connection.end();
+        });
         });
       });
     });
