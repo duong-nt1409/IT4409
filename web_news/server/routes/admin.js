@@ -6,7 +6,8 @@ import {
   updatePostStatus,
   deleteUser,
   getPendingEditors,
-  updateUserStatus
+  updateUserStatus,
+  deletePost
 } from "../controllers/admin.js";
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.put("/users/:id/status", updateUserStatus); // <-- Route mới
 router.get("/posts/pending", getPendingPosts);
 router.put("/posts/:id/status", updatePostStatus);
 router.delete("/users/:id", deleteUser);
+router.delete("/posts/:id", deletePost);
 
 export default router;

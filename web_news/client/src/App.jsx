@@ -16,20 +16,20 @@ import EditorPage from "./pages/Page-Editor";
 import Profile from "./pages/Profile";
 import SavedPosts from "./pages/SavedPosts"; 
 import ViewedPosts from "./pages/ViewedPosts"
-import AdminDashboard from "./pages/AdminDashboard"; // Import Admin Dashboard
+import AdminDashboard from "./pages/AdminDashboard"; 
 import "./style.scss";
+import axios from "axios";
+
+// Cấu hình Axios Global (Chuẩn)
+axios.defaults.withCredentials = true;
 
 const Layout = () => {
   return (
     <div className="layout-wrapper">
       <Navbar />
-      
-      {/* CHỈ CÓ NỘI DUNG CHÍNH LÀ BỊ GIỚI HẠN CHIỀU RỘNG */}
       <div className="main-content">
         <Outlet />
       </div>
-
-      {/* FOOTER NẰM NGOÀI CÙNG -> TỰ ĐỘNG TRÀN VIỀN */}
       <Footer />
     </div>
   );
@@ -45,16 +45,20 @@ const router = createBrowserRouter([
       { path: "post/:id", element: <Single /> },
       { path: "write", element: <Write /> },
       { path: "editor", element: <EditorPage /> },
+      
+      // --- CHUYỂN 3 DÒNG NÀY VÀO ĐÂY ĐỂ CÓ NAVBAR & FOOTER ---
+      { path: "profile", element: <Profile /> },
+      { path: "saved-posts", element: <SavedPosts /> }, 
+      { path: "viewed-posts", element: <ViewedPosts /> },
+      // ------------------------------------------------------
     ],
   },
+  // Các trang riêng biệt không cần Navbar/Footer thì để ngoài này
   { path: "/register", element: <Register />, errorElement: <ErrorPage /> },
   { path: "/login", element: <Login />, errorElement: <ErrorPage /> },
   { path: "/register-editor", element: <RegisterEditor />, errorElement: <ErrorPage /> },
-  { path: "/admin", element: <AdminDashboard />, errorElement: <ErrorPage /> }, // Route Admin riêng biệt (không dùng Layout chung)
+  { path: "/admin", element: <AdminDashboard />, errorElement: <ErrorPage /> }, 
   { path: "*", element: <ErrorPage /> },
-  { path: "/profile", element: <Profile /> },
-  { path: "/saved-posts", element: <SavedPosts /> }, 
-      { path: "/viewed-posts", element: <ViewedPosts /> },
 ]);
 
 function App() {

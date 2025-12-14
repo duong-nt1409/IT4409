@@ -44,27 +44,74 @@ const AdminDashboard = () => {
   }, [activeTab]);
 
   const handleApproveEditor = async (userId) => {
-    alert("Chức năng duyệt Editor đang phát triển (Vui lòng tự implement logic API)");
+    try {
+      await axios.put(`/admin/users/${userId}/status`, { status: "approved" });
+      alert("Đã duyệt Editor thành công!");
+      // Refresh data
+      setPendingEditors(pendingEditors.filter((editor) => editor.id !== userId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi duyệt Editor!");
+    }
   };
 
   const handleRejectEditor = async (userId) => {
-    alert("Chức năng từ chối Editor đang phát triển (Vui lòng tự implement logic API)");
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối Editor này?")) return;
+    try {
+      await axios.put(`/admin/users/${userId}/status`, { status: "rejected" });
+      alert("Đã từ chối Editor!");
+      setPendingEditors(pendingEditors.filter((editor) => editor.id !== userId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi từ chối Editor!");
+    }
   };
 
   const handleApprovePost = async (postId) => {
-    alert("Chức năng duyệt bài đang phát triển (Vui lòng tự implement logic API)");
+    try {
+      await axios.put(`/admin/posts/${postId}/status`, { status: "approved" });
+      alert("Đã duyệt bài viết thành công!");
+      setPendingPosts(pendingPosts.filter((post) => post.id !== postId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi duyệt bài viết!");
+    }
   };
 
   const handleRejectPost = async (postId) => {
-    alert("Chức năng từ chối bài đang phát triển (Vui lòng tự implement logic API)");
+    if (!window.confirm("Bạn có chắc chắn muốn từ chối bài viết này?")) return;
+    try {
+      await axios.put(`/admin/posts/${postId}/status`, { status: "rejected" });
+      alert("Đã từ chối bài viết!");
+      setPendingPosts(pendingPosts.filter((post) => post.id !== postId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi từ chối bài viết!");
+    }
   };
 
   const handleDeletePost = async (postId) => {
-    alert("Chức năng xóa bài đang phát triển (Vui lòng tự implement logic API)");
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này vĩnh viễn?")) return;
+    try {
+      await axios.delete(`/admin/posts/${postId}`);
+      alert("Đã xóa bài viết!");
+      setPendingPosts(pendingPosts.filter((post) => post.id !== postId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi xóa bài viết!");
+    }
   };
 
   const handleDeleteEditor = async (userId) => {
-    alert("Chức năng xóa Editor đang phát triển (Vui lòng tự implement logic API)");
+    if (!window.confirm("Bạn có chắc chắn muốn xóa Editor này? Hành động này không thể hoàn tác.")) return;
+    try {
+      await axios.delete(`/admin/users/${userId}`);
+      alert("Đã xóa Editor!");
+      setEditors(editors.filter((editor) => editor.id !== userId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi xóa Editor!");
+    }
   };
 
   const handleLogout = async () => {
