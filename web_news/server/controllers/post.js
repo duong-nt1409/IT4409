@@ -30,7 +30,13 @@ export const getPosts = (req, res) => {
     params.push(status);
   }
 
-  q += " ORDER BY p.created_at DESC";
+  // Ranking logic: Freshness vs Popularity
+  // Score = (view_count * readRate) - (hours_old * newRate)
+  const newRate = req.query.newRate ? parseFloat(req.query.newRate) : 0.5; 
+  const readRate = req.query.readRate ? parseFloat(req.query.readRate) : 1;
+
+  q += " ORDER BY (p.view_count * ? - TIMESTAMPDIFF(HOUR, p.created_at, NOW()) * ?) DESC";
+  params.push(readRate, newRate);
 
   db.query(q, params, (err, data) => {
     if (err) return res.status(500).send(err);
@@ -41,7 +47,7 @@ export const getPosts = (req, res) => {
 // Lấy chi tiết 1 bài
 export const getPost = (req, res) => {
   const q =
-    "SELECT p.id, u.username, p.title, p.content, p.thumbnail, u.avatar, p.category_id, c.name as cat_name, p.created_at as date " +
+    "SELECT p.id, u.username, p.title, p.content, p.thumbnail, u.avatar, p.category_id, c.name as cat_name, p.view_count, p.created_at as date " +
     "FROM Posts p " +
     "JOIN Users u ON u.id = p.user_id " +
     "LEFT JOIN Categories c ON c.id = p.category_id " +

@@ -95,7 +95,7 @@ const Single = () => {
           {post.avatar && <img src={post.avatar} alt="" />}
           <div className="info">
             <span>{post.username}</span>
-            <p>Đăng {moment(post.date).fromNow()}</p>
+            <p>Đăng {moment(post.date).fromNow()} • {post.view_count || 0} lượt xem</p>
           </div>
           {currentUser && currentUser.username === post.username && (
             <div className="edit">
