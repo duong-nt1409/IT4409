@@ -1,38 +1,66 @@
 import { db } from "../db.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken"; // <--- 1. BẮT BUỘC PHẢI IMPORT CÁI NÀY
+import jwt from "jsonwebtoken"; 
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 const EDITOR_ROLE_ID = 2;
 
+// --- CẤU HÌNH REGEX (LUẬT KIỂM TRA) ---
+
+// 1. Regex kiểm tra Email: Phải có dạng abc@xyz.com
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// 2. Regex kiểm tra Password: 
+
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$/;
+
 export const register = (req, res) => {
+  const { username, email, password } = req.body;
+
+  // --- BƯỚC 1: VALIDATE DỮ LIỆU ĐẦU VÀO ---
+
+  // Kiểm tra điền thiếu thông tin
+  if (!username || !email || !password) {
+    return res.status(400).json("Vui lòng nhập đầy đủ thông tin!");
+  }
+
+  // Kiểm tra định dạng Email
+  if (!emailRegex.test(email)) {
+    return res.status(400).json("Email không hợp lệ! (Ví dụ: user@example.com)");
+  }
+
+  // Kiểm tra độ mạnh Mật khẩu
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json(
+      "Mật khẩu phải trên 6 ký tự, bao gồm ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt (@$!%*?&)."
+    );
+  }
+
+  // --- BƯỚC 2: KIỂM TRA TRÙNG LẶP TRONG DB ---
   const q = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
-  db.query(q, [req.body.email, req.body.username], (err, data) => {
-    if (err) return res.status(500).json(err.message || "Lỗi khi kiểm tra thông tin người dùng");
-    if (data.length) return res.status(409).json("User đã tồn tại!");
-
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(req.body.password, salt);
-
-    const q = "INSERT INTO Users(`username`,`email`,`password_hash`, `role_id`, `avatar`) VALUES (?)";
+  db.query(q, [email, username], (err, data) => {
+    if (err) return res.status(500).json(err.message || "Lỗi server");
     
+    if (data.length) {
+      // Kiểm tra kỹ xem trùng cái gì để báo lỗi chính xác hơn
+      if (data[0].email === email) return res.status(409).json("Email này đã được sử dụng!");
+      if (data[0].username === username) return res.status(409).json("Tên đăng nhập đã tồn tại!");
+    }
+
+    // --- BƯỚC 3: TẠO USER MỚI ---
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(password, salt);
+
+    const qInsert = "INSERT INTO Users(`username`,`email`,`password_hash`, `role_id`, `avatar`) VALUES (?)";
     const roleIdUser = 3; 
+    const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    const values = [
-      req.body.username,
-      req.body.email,
-      hash,
-      roleIdUser,
-      DEFAULT_AVATAR
-    ];
+    const values = [username, email, hash, roleIdUser, defaultAvatar];
 
-    db.query(q, [values], (err, data) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json("Lỗi khi tạo User: " + err.message);
-      } 
-      return res.status(200).json("Đã tạo User thành công!");
+    db.query(qInsert, [values], (err, data) => {
+      if (err) return res.status(500).json("Lỗi khi tạo User: " + err.message);
+      return res.status(200).json("Đăng ký thành công!");
     });
   });
 };
@@ -42,7 +70,7 @@ export const login = (req, res) => {
 
   db.query(q, [req.body.username], (err, data) => {
     if (err) return res.status(500).json(err.message || "Lỗi khi tìm kiếm người dùng");
-    if (data.length === 0) return res.status(404).json("User không tìm thấy!");
+    if (data.length === 0) return res.status(404).json("Sai tên đăng nhập hoặc mật khẩu!");
 
     const user = data[0];
 
@@ -91,7 +119,6 @@ export const logout = (req, res) => {
   }).status(200).json("Đã đăng xuất.");
 };
 
-// --- LOGIC EDITOR REGISTER (GIỮ NGUYÊN 100%) ---
 export const editorRegister = (req, res) => {
   const {
     username,
@@ -103,23 +130,41 @@ export const editorRegister = (req, res) => {
     avatar,
   } = req.body;
 
+  // --- BƯỚC 1: VALIDATE DỮ LIỆU ---
+
+  // 1. Kiểm tra thiếu thông tin quan trọng
   if (!username || !email || !password) {
     return res
       .status(400)
       .json("Vui lòng nhập đầy đủ username, email và password.");
   }
 
+  // 2. Kiểm tra định dạng Email
+  if (!emailRegex.test(email)) {
+    return res.status(400).json("Email không hợp lệ! (Ví dụ: editor@example.com)");
+  }
+
+  // 3. Kiểm tra độ mạnh Mật khẩu
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json(
+      "Mật khẩu phải trên 6 ký tự, bao gồm ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt (@$!%*?&)."
+    );
+  }
+
+  // --- BƯỚC 2: LOGIC ĐĂNG KÝ (Giữ nguyên) ---
   const checkQuery = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
   db.query(checkQuery, [email, username], (err, data) => {
-    if (err) return res.status(500).json(err.message || "Lỗi khi kiểm tra thông tin người dùng");
-    if (data.length)
-      return res.status(409).json("User đã tồn tại. Vui lòng chọn tên khác!");
+    if (err) return res.status(500).json(err.message || "Lỗi kiểm tra trùng lặp");
+    
+    if (data.length) {
+       if (data[0].email === email) return res.status(409).json("Email này đã được sử dụng!");
+       if (data[0].username === username) return res.status(409).json("Tên đăng nhập đã tồn tại!");
+    }
 
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
-    // Editor accounts are created with 'pending' status and require admin approval
     const insertQuery =
       "INSERT INTO Users(`username`,`email`,`password_hash`,`role_id`,`name`,`age`,`years_of_experience`,`avatar`, `status`) VALUES (?)";
 
@@ -127,19 +172,17 @@ export const editorRegister = (req, res) => {
       username,
       email,
       hash,
-      EDITOR_ROLE_ID,
+      2, // Role Editor
       name || null,
       age ? Number(age) : null,
       years_of_experience ? Number(years_of_experience) : null,
-      avatar || DEFAULT_AVATAR,
-      'approved' // Changed to 'approved' for testing - new editors are automatically approved
-      // 'pending' // New editor accounts are saved as 'not approved' (pending approval)
-      // 'rejected'
+      avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+      'approved' // Mặc định duyệt luôn để bạn test cho dễ
     ];
 
     db.query(insertQuery, [values], (insertErr) => {
       if (insertErr) return res.status(500).json(insertErr.message || "Lỗi khi tạo tài khoản Editor");
-      return res.status(200).json("Đăng ký Editor thành công! Tài khoản của bạn đã được phê duyệt.");
+      return res.status(200).json("Đăng ký Editor thành công! Tài khoản đã được duyệt.");
     });
   });
 };

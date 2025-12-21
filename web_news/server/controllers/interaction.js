@@ -65,14 +65,25 @@ export const addToHistory = (req, res) => {
   // 1. Xóa lịch sử cũ của bài này (để tránh trùng lặp và cập nhật thời gian mới nhất)
   const qDelete = "DELETE FROM ReadHistory WHERE user_id = ? AND post_id = ?";
 
-  db.query(qDelete, [user_id, post_id], (err, data) => {
+  db.query(qDelete, [user_id, post_id], (err, resultDelete) => {
     if (err) return res.status(500).json(err);
+
+    const alreadyRead = resultDelete.affectedRows > 0;
 
     // 2. Thêm lại vào bảng
     const qInsert = "INSERT INTO ReadHistory (user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
     
     db.query(qInsert, [user_id, post_id], (err, data) => {
        if (err) return res.status(500).json(err);
+
+       // 3. Cập nhật view_count nếu là lượt đọc mới
+       if (!alreadyRead) {
+         const qUpdate = "UPDATE Posts SET view_count = view_count + 1 WHERE id = ?";
+         db.query(qUpdate, [post_id], (err) => {
+           if (err) console.error("Error updating view_count:", err);
+         });
+       }
+
        return res.status(200).json("Đã cập nhật lịch sử.");
     });
   });

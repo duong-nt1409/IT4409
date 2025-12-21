@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
+import moment from "moment";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -44,7 +45,7 @@ const Home = () => {
                 </Link>
                 <div className="meta">
                    <span className="source">MyNews</span> 
-                   <span className="time">• 2 giờ trước</span>
+                   <span className="time">• {moment(posts[0].created_at).fromNow()} • {posts[0].view_count || 0} lượt xem</span>
                 </div>
                 <p>{getText(posts[0].content).substring(0, 150)}...</p>
               </div>
@@ -80,7 +81,7 @@ const Home = () => {
                 </Link>
                 <div className="meta">
                    <span className="source">{post.cat_name || "Tổng hợp"}</span> 
-                   <span className="time">5 phút trước</span>
+                   <span className="time">{moment(post.created_at).fromNow()} • {post.view_count || 0} lượt xem</span>
                 </div>
               </div>
               <div className="img-container">
