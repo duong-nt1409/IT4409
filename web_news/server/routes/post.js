@@ -5,11 +5,14 @@ import {
   addPost,
   deletePost,
   updatePost,
+  getPostStats,
 } from "../controllers/post.js";
 
 const router = express.Router();
 
 router.get("/", getPosts);
+
+router.get("/:id/stats", getPostStats);
 
 router.get("/:id", getPost);
 

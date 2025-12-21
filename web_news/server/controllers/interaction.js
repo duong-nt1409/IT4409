@@ -38,11 +38,13 @@ export const getSavedPosts = (req, res) => {
   const q = `
     SELECT 
       p.*, c.name as cat_name, b.created_at as saved_at,
+      COALESCE(ns.view_count, 0) as view_count,
       (SELECT COUNT(*) FROM Bookmarks WHERE post_id = p.id AND user_id = ?) AS is_saved,
       (SELECT COUNT(*) FROM Likes WHERE post_id = p.id AND user_id = ?) AS is_liked
     FROM Posts p 
     JOIN Bookmarks b ON p.id = b.post_id 
     JOIN Categories c ON p.category_id = c.id
+    LEFT JOIN NewsStats ns ON p.id = ns.post_id
     WHERE b.user_id = ? 
     ORDER BY b.created_at DESC`;
     
@@ -78,9 +80,26 @@ export const addToHistory = (req, res) => {
 
        // 3. Cập nhật view_count nếu là lượt đọc mới
        if (!alreadyRead) {
-         const qUpdate = "UPDATE Posts SET view_count = view_count + 1 WHERE id = ?";
-         db.query(qUpdate, [post_id], (err) => {
-           if (err) console.error("Error updating view_count:", err);
+         // Update NewsStats view_count, create entry if it doesn't exist
+         const qCheck = "SELECT post_id FROM NewsStats WHERE post_id = ?";
+         db.query(qCheck, [post_id], (err, stats) => {
+           if (err) {
+             console.error("Error checking NewsStats:", err);
+             return;
+           }
+           if (stats.length === 0) {
+             // Create NewsStats entry if it doesn't exist
+             const qInsert = "INSERT INTO NewsStats (post_id, view_count, comment_count, rating_avg) VALUES (?, 1, 0, 0)";
+             db.query(qInsert, [post_id], (err) => {
+               if (err) console.error("Error creating NewsStats:", err);
+             });
+           } else {
+             // Update existing entry
+             const qUpdate = "UPDATE NewsStats SET view_count = view_count + 1 WHERE post_id = ?";
+             db.query(qUpdate, [post_id], (err) => {
+               if (err) console.error("Error updating view_count:", err);
+             });
+           }
          });
        }
 
@@ -94,11 +113,13 @@ export const getHistoryPosts = (req, res) => {
   const q = `
     SELECT DISTINCT 
       p.*, c.name as cat_name, rh.viewed_at,
+      COALESCE(ns.view_count, 0) as view_count,
       (SELECT COUNT(*) FROM Bookmarks WHERE post_id = p.id AND user_id = ?) AS is_saved,
       (SELECT COUNT(*) FROM Likes WHERE post_id = p.id AND user_id = ?) AS is_liked
     FROM Posts p 
     JOIN ReadHistory rh ON p.id = rh.post_id 
     JOIN Categories c ON p.category_id = c.id
+    LEFT JOIN NewsStats ns ON p.id = ns.post_id
     WHERE rh.user_id = ? 
     ORDER BY rh.viewed_at DESC`;
 

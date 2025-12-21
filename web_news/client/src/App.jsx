@@ -16,7 +16,8 @@ import EditorPage from "./pages/Page-Editor";
 import Profile from "./pages/Profile";
 import SavedPosts from "./pages/SavedPosts"; 
 import ViewedPosts from "./pages/ViewedPosts"
-import AdminDashboard from "./pages/AdminDashboard"; 
+import AdminDashboard from "./pages/AdminDashboard";
+import PostsDetail from "./pages/PostsDetail"; 
 import "./style.scss";
 import axios from "axios";
 
@@ -42,6 +43,7 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Home /> },
+      { path: "post/:id/stats", element: <PostsDetail /> },
       { path: "post/:id", element: <Single /> },
       { path: "write", element: <Write /> },
       { path: "editor", element: <EditorPage /> },

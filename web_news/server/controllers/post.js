@@ -5,8 +5,18 @@ export const getPosts = (req, res) => {
   const catName = req.query.cat;
   const uid = req.query.uid; // Lọc theo User ID (cho Editor)
   const status = req.query.status; // Optional status filter
+  const sortBy = req.query.sortBy; // Sort by: likes, comments, views, time
 
-  let q = "SELECT p.*, c.name as cat_name FROM Posts p LEFT JOIN Categories c ON p.category_id = c.id WHERE 1=1";
+  let q = `SELECT 
+    p.*, 
+    c.name as cat_name, 
+    COALESCE(ns.view_count, 0) as view_count,
+    (SELECT COUNT(*) FROM Comments WHERE post_id = p.id) as comment_count,
+    (SELECT COUNT(*) FROM Likes WHERE post_id = p.id) as like_count
+  FROM Posts p 
+  LEFT JOIN Categories c ON p.category_id = c.id 
+  LEFT JOIN NewsStats ns ON p.id = ns.post_id 
+  WHERE 1=1`;
   const params = [];
 
   // If uid is provided (for editor dashboard), show all posts regardless of status
@@ -30,13 +40,23 @@ export const getPosts = (req, res) => {
     params.push(status);
   }
 
-  // Ranking logic: Freshness vs Popularity
-  // Score = (view_count * readRate) - (hours_old * newRate)
-  const newRate = req.query.newRate ? parseFloat(req.query.newRate) : 0.5; 
-  const readRate = req.query.readRate ? parseFloat(req.query.readRate) : 1;
-
-  q += " ORDER BY (p.view_count * ? - TIMESTAMPDIFF(HOUR, p.created_at, NOW()) * ?) DESC";
-  params.push(readRate, newRate);
+  // Sorting logic
+  if (sortBy === 'likes') {
+    q += " ORDER BY like_count DESC, p.created_at DESC";
+  } else if (sortBy === 'comments') {
+    q += " ORDER BY comment_count DESC, p.created_at DESC";
+  } else if (sortBy === 'views' || sortBy === 'readcount') {
+    q += " ORDER BY view_count DESC, p.created_at DESC";
+  } else if (sortBy === 'time') {
+    q += " ORDER BY p.created_at DESC";
+  } else {
+    // Default ranking logic: Freshness vs Popularity
+    // Score = (view_count * readRate) - (hours_old * newRate)
+    const newRate = req.query.newRate ? parseFloat(req.query.newRate) : 0.5; 
+    const readRate = req.query.readRate ? parseFloat(req.query.readRate) : 1;
+    q += " ORDER BY (COALESCE(ns.view_count, 0) * ? - TIMESTAMPDIFF(HOUR, p.created_at, NOW()) * ?) DESC";
+    params.push(readRate, newRate);
+  }
 
   db.query(q, params, (err, data) => {
     if (err) return res.status(500).send(err);
@@ -47,10 +67,11 @@ export const getPosts = (req, res) => {
 // Lấy chi tiết 1 bài
 export const getPost = (req, res) => {
   const q =
-    "SELECT p.id, u.username, p.title, p.content, p.thumbnail, u.avatar, p.category_id, c.name as cat_name, p.view_count, p.created_at as date " +
+    "SELECT p.id, u.username, p.title, p.content, p.thumbnail, u.avatar, p.category_id, c.name as cat_name, COALESCE(ns.view_count, 0) as view_count, p.created_at as date " +
     "FROM Posts p " +
     "JOIN Users u ON u.id = p.user_id " +
     "LEFT JOIN Categories c ON c.id = p.category_id " +
+    "LEFT JOIN NewsStats ns ON p.id = ns.post_id " +
     "WHERE p.id = ?";
 
   db.query(q, [req.params.id], (err, data) => {
@@ -267,6 +288,131 @@ export const updatePost = (req, res) => {
     return res.status(200).json({
       message: "Bài viết đã được cập nhật thành công!",
       postId: postId,
+    });
+  });
+};
+
+// Get detailed statistics for a post
+export const getPostStats = (req, res) => {
+  const postId = req.params.id;
+  const userId = req.query.user_id; // Get user_id from query parameter
+
+  // First, verify that the user owns this post
+  const checkOwnershipQuery = "SELECT user_id FROM Posts WHERE id = ?";
+  
+  db.query(checkOwnershipQuery, [postId], (err, postData) => {
+    if (err) {
+      console.error("Error checking post ownership:", err);
+      return res.status(500).json("Lỗi khi kiểm tra quyền truy cập");
+    }
+
+    if (postData.length === 0) {
+      return res.status(404).json("Không tìm thấy bài viết");
+    }
+
+    // Check if the user is the owner of the post
+    if (!userId || postData[0].user_id !== parseInt(userId)) {
+      return res.status(403).json("Bạn không có quyền xem thống kê bài viết này");
+    }
+
+    // Query to get read count per day
+    const readsPerDayQuery = `
+      SELECT 
+        DATE(viewed_at) as date,
+        COUNT(*) as read_count
+      FROM ReadHistory
+      WHERE post_id = ?
+      GROUP BY DATE(viewed_at)
+      ORDER BY date DESC
+      LIMIT 30
+    `;
+
+    // Query to get new reads today
+    const newReadsTodayQuery = `
+      SELECT COUNT(*) as count
+      FROM ReadHistory
+      WHERE post_id = ? AND DATE(viewed_at) = CURDATE()
+    `;
+
+    // Query to get total comments
+    const totalCommentsQuery = `
+      SELECT COUNT(*) as count
+      FROM Comments
+      WHERE post_id = ?
+    `;
+
+    // Query to get new comments today
+    const newCommentsTodayQuery = `
+      SELECT COUNT(*) as count
+      FROM Comments
+      WHERE post_id = ? AND DATE(created_at) = CURDATE()
+    `;
+
+    // Query to get total likes
+    const totalLikesQuery = `
+      SELECT COUNT(*) as count
+      FROM Likes
+      WHERE post_id = ?
+    `;
+
+    // Query to get new likes today
+    const newLikesTodayQuery = `
+      SELECT COUNT(*) as count
+      FROM Likes
+      WHERE post_id = ? AND DATE(created_at) = CURDATE()
+    `;
+
+    // Execute all queries
+    db.query(readsPerDayQuery, [postId], (err1, readsPerDay) => {
+      if (err1) {
+        console.error("Error fetching reads per day:", err1);
+        return res.status(500).json("Lỗi khi lấy thống kê lượt đọc theo ngày");
+      }
+
+      db.query(newReadsTodayQuery, [postId], (err2, newReadsToday) => {
+        if (err2) {
+          console.error("Error fetching new reads today:", err2);
+          return res.status(500).json("Lỗi khi lấy lượt đọc mới hôm nay");
+        }
+
+        db.query(totalCommentsQuery, [postId], (err3, totalComments) => {
+          if (err3) {
+            console.error("Error fetching total comments:", err3);
+            return res.status(500).json("Lỗi khi lấy tổng số bình luận");
+          }
+
+          db.query(newCommentsTodayQuery, [postId], (err4, newCommentsToday) => {
+            if (err4) {
+              console.error("Error fetching new comments today:", err4);
+              return res.status(500).json("Lỗi khi lấy bình luận mới hôm nay");
+            }
+
+            db.query(totalLikesQuery, [postId], (err5, totalLikes) => {
+              if (err5) {
+                console.error("Error fetching total likes:", err5);
+                return res.status(500).json("Lỗi khi lấy tổng số lượt thích");
+              }
+
+              db.query(newLikesTodayQuery, [postId], (err6, newLikesToday) => {
+                if (err6) {
+                  console.error("Error fetching new likes today:", err6);
+                  return res.status(500).json("Lỗi khi lấy lượt thích mới hôm nay");
+                }
+
+                // Return all statistics
+                return res.status(200).json({
+                  readsPerDay: readsPerDay || [],
+                  newReadsToday: newReadsToday[0]?.count || 0,
+                  totalComments: totalComments[0]?.count || 0,
+                  newCommentsToday: newCommentsToday[0]?.count || 0,
+                  totalLikes: totalLikes[0]?.count || 0,
+                  newLikesToday: newLikesToday[0]?.count || 0,
+                });
+              });
+            });
+          });
+        });
+      });
     });
   });
 };

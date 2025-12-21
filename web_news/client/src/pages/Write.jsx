@@ -8,6 +8,7 @@ const BlockTypes = {
   HEADER: "header",
   PARAGRAPH: "paragraph",
   IMAGE: "image",
+  GALLERY: "gallery",
 };
 
 const HeaderBlock = ({ block, onUpdate, onDelete }) => {
@@ -61,7 +62,7 @@ const HeaderBlock = ({ block, onUpdate, onDelete }) => {
 
   return (
     <div className="block-item header-block">
-      <div className="block-controls">
+      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: "8px" }}>
         <select 
           value={level} 
           onChange={(e) => {
@@ -132,7 +133,7 @@ const ParagraphBlock = ({ block, onUpdate, onDelete }) => {
 
   return (
     <div className="block-item paragraph-block">
-      <div className="block-controls">
+      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
         <button onClick={onDelete} className="delete-block">Xóa</button>
       </div>
       <p
@@ -170,7 +171,7 @@ const ImageBlock = ({ block, onUpdate, onDelete }) => {
 
   return (
     <div className="block-item image-block">
-      <div className="block-controls">
+      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
         <button onClick={onDelete} className="delete-block">Xóa</button>
       </div>
       <div style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}>
@@ -205,6 +206,362 @@ const ImageBlock = ({ block, onUpdate, onDelete }) => {
   );
 };
 
+const GalleryBlock = ({ block, onUpdate, onDelete }) => {
+  const [images, setImages] = useState(block.data.images || [{ url: "", alt: "" }]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(block.data.autoPlay !== false); // Default to true
+  const [intervalTime, setIntervalTime] = useState(block.data.interval || 3000); // Default 3 seconds
+  const intervalRef = useRef(null);
+
+  // Auto-advance functionality
+  useEffect(() => {
+    if (autoPlay && images.length > 1 && images.some(img => img.url)) {
+      const advanceSlide = () => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      };
+      
+      intervalRef.current = setInterval(advanceSlide, intervalTime);
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [autoPlay, images, intervalTime]);
+
+  const handleAddImage = () => {
+    const newImages = [...images, { url: "", alt: "" }];
+    setImages(newImages);
+    onUpdate({ ...block, data: { images: newImages, autoPlay, interval: intervalTime } });
+  };
+
+  const handleRemoveImage = (index) => {
+    const newImages = images.filter((_, i) => i !== index);
+    if (newImages.length === 0) {
+      newImages.push({ url: "", alt: "" });
+    }
+    setImages(newImages);
+    if (currentIndex >= newImages.length) {
+      setCurrentIndex(Math.max(0, newImages.length - 1));
+    }
+    onUpdate({ ...block, data: { images: newImages, autoPlay, interval: intervalTime } });
+  };
+
+  const handleImageChange = (index, field, value) => {
+    const newImages = [...images];
+    newImages[index][field] = value;
+    setImages(newImages);
+    onUpdate({ ...block, data: { images: newImages, autoPlay, interval: intervalTime } });
+  };
+
+  const handlePrevious = () => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+    // Reset auto-play timer when manually navigating
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    if (autoPlay) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, intervalTime);
+    }
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    // Reset auto-play timer when manually navigating
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    if (autoPlay) {
+      intervalRef.current = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      }, intervalTime);
+    }
+  };
+
+  const handleAutoPlayChange = (e) => {
+    const newAutoPlay = e.target.checked;
+    setAutoPlay(newAutoPlay);
+    onUpdate({ ...block, data: { images, autoPlay: newAutoPlay, interval: intervalTime } });
+  };
+
+  const handleIntervalChange = (e) => {
+    const newInterval = parseInt(e.target.value) || 3000;
+    setIntervalTime(newInterval);
+    onUpdate({ ...block, data: { images, autoPlay, interval: newInterval } });
+  };
+
+  const currentImage = images[currentIndex] || { url: "", alt: "" };
+  const hasValidImages = images.some(img => img.url);
+
+  return (
+    <div className="block-item gallery-block">
+      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+        <button onClick={onDelete} className="delete-block">Xóa</button>
+      </div>
+      <div style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}>
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+            <input
+              type="checkbox"
+              checked={autoPlay}
+              onChange={handleAutoPlayChange}
+            />
+            <span>Tự động chuyển ảnh</span>
+          </label>
+          {autoPlay && (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <label>Khoảng thời gian (ms):</label>
+              <input
+                type="number"
+                value={intervalTime}
+                onChange={handleIntervalChange}
+                min="1000"
+                step="500"
+                style={{ padding: "5px", width: "100px", borderRadius: "4px", border: "1px solid #ccc" }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Gallery Display */}
+        {hasValidImages && (
+          <div style={{ position: "relative", marginBottom: "15px", border: "1px solid #ddd", borderRadius: "4px", overflow: "hidden" }}>
+            <img
+              src={currentImage.url}
+              alt={currentImage.alt}
+              style={{ width: "100%", maxWidth: "800px", height: "auto", display: "block" }}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevious}
+                  style={{
+                    position: "absolute",
+                    left: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={handleNext}
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(0, 0, 0, 0.6)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+                  }}
+                >
+                  ›
+                </button>
+                <div style={{
+                  position: "absolute",
+                  bottom: "10px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  color: "white",
+                  padding: "5px 10px",
+                  borderRadius: "15px",
+                  fontSize: "12px"
+                }}>
+                  {currentIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Thumbnail Strip */}
+        {hasValidImages && images.length > 1 && (
+          <div style={{ 
+            display: "flex", 
+            gap: "8px", 
+            justifyContent: "center", 
+            flexWrap: "wrap",
+            marginBottom: "15px",
+            padding: "15px",
+            backgroundColor: "#fff",
+            border: "1px solid #ddd",
+            borderRadius: "4px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+          }}>
+            {images.map((image, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setCurrentIndex(index);
+                  // Reset auto-play timer when clicking thumbnail
+                  if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                  }
+                  if (autoPlay) {
+                    intervalRef.current = setInterval(() => {
+                      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+                    }, intervalTime);
+                  }
+                }}
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  border: "none",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  opacity: currentIndex === index ? 1 : 0.5,
+                  backgroundColor: "#f5f5f5"
+                }}
+                onMouseEnter={(e) => {
+                  if (currentIndex !== index) {
+                    e.currentTarget.style.opacity = "0.7";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentIndex !== index) {
+                    e.currentTarget.style.opacity = "0.5";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }
+                }}
+              >
+                {image.url ? (
+                  <img
+                    src={image.url}
+                    alt={image.alt || `Thumbnail ${index + 1}`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover"
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#999",
+                    fontSize: "12px"
+                  }}>
+                    {index + 1}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Image Inputs */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {images.map((image, index) => (
+            <div key={index} style={{ border: "1px solid #eee", padding: "10px", borderRadius: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontWeight: "bold" }}>Ảnh {index + 1}</span>
+                {images.length > 1 && (
+                  <button
+                    onClick={() => handleRemoveImage(index)}
+                    style={{
+                      padding: "5px 10px",
+                      backgroundColor: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px"
+                    }}
+                  >
+                    Xóa
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                placeholder="URL ảnh (https://example.com/image.jpg)"
+                value={image.url}
+                onChange={(e) => handleImageChange(index, "url", e.target.value)}
+                onBlur={() => onUpdate({ ...block, data: { images, autoPlay, interval: intervalTime } })}
+                style={{ width: "100%", padding: "8px", marginBottom: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+              />
+              <input
+                type="text"
+                placeholder="Mô tả ảnh (alt text)"
+                value={image.alt}
+                onChange={(e) => handleImageChange(index, "alt", e.target.value)}
+                onBlur={() => onUpdate({ ...block, data: { images, autoPlay, interval: intervalTime } })}
+                style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+              />
+            </div>
+          ))}
+          <button
+            onClick={handleAddImage}
+            style={{
+              padding: "10px",
+              backgroundColor: "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: "bold"
+            }}
+          >
+            + Thêm ảnh
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Write = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -223,6 +580,9 @@ const Write = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const contentRef = useRef(null);
+  const buttonsRef = useRef(null);
+  const titleInputRef = useRef(null);
 
   // Convert blocks array to HTML
   const blocksToHTML = (blocksArray) => {
@@ -244,6 +604,19 @@ const Write = () => {
             const imgUrl = block.data.url || "";
             const imgAlt = block.data.alt || "";
             return imgUrl ? `<img src="${imgUrl}" alt="${imgAlt}" style="max-width: 100%; height: auto;" />` : "";
+          }
+          case BlockTypes.GALLERY: {
+            const images = block.data.images || [];
+            const autoPlay = block.data.autoPlay !== false;
+            const interval = block.data.interval || 3000;
+            const validImages = images.filter(img => img.url);
+            if (validImages.length === 0) return "";
+            
+            // Create a gallery with data attributes for JavaScript to handle
+            const imagesHTML = validImages.map(img => 
+              `<img src="${img.url}" alt="${img.alt || ''}" data-gallery-image />`
+            ).join("");
+            return `<div class="gallery-container" data-autoplay="${autoPlay}" data-interval="${interval}">${imagesHTML}</div>`;
           }
           default:
             return "";
@@ -290,6 +663,12 @@ const Write = () => {
             });
           }
         } else if (tagName === "img") {
+          // Check if it's part of a gallery
+          const parent = node.parentElement;
+          if (parent && parent.classList.contains("gallery-container")) {
+            // Skip individual images in gallery, will be handled by gallery-container
+            return;
+          }
           blocks.push({
             id: blockId++,
             type: BlockTypes.IMAGE,
@@ -298,6 +677,26 @@ const Write = () => {
               alt: node.getAttribute("alt") || "",
             },
           });
+        } else if (tagName === "div" && node.classList.contains("gallery-container")) {
+          // Parse gallery
+          const images = Array.from(node.querySelectorAll("img[data-gallery-image]")).map(img => ({
+            url: img.getAttribute("src") || "",
+            alt: img.getAttribute("alt") || "",
+          }));
+          const autoPlay = node.getAttribute("data-autoplay") !== "false";
+          const interval = parseInt(node.getAttribute("data-interval")) || 3000;
+          
+          if (images.length > 0) {
+            blocks.push({
+              id: blockId++,
+              type: BlockTypes.GALLERY,
+              data: {
+                images: images,
+                autoPlay: autoPlay,
+                interval: interval,
+              },
+            });
+          }
         } else {
           // Process child nodes
           Array.from(node.childNodes).forEach(processNode);
@@ -362,6 +761,49 @@ const Write = () => {
     fetchPost();
   }, [isEditMode, postId, state]);
 
+  // Position sidebar buttons
+  useEffect(() => {
+    const updateButtonPosition = () => {
+      if (contentRef.current && buttonsRef.current) {
+        const contentRect = contentRef.current.getBoundingClientRect();
+        const navbarHeight = 60;
+        
+        // Get footer to calculate bottom constraint
+        const footer = document.querySelector('footer');
+        let bottomValue = '20px'; // Default bottom padding
+        
+        if (footer) {
+          const footerRect = footer.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // If footer is visible in viewport, calculate distance from bottom
+          if (footerRect.top < viewportHeight) {
+            // Footer is visible, set bottom to distance from viewport bottom to footer top + padding
+            bottomValue = `${viewportHeight - footerRect.top + 20}px`;
+          } else {
+            // Footer is below viewport, use default or estimate footer height (~250px)
+            bottomValue = '270px'; // Footer height estimate + padding
+          }
+        }
+        
+        // Position sidebar on the left side of content area, aligned with content start
+        buttonsRef.current.style.left = `${Math.max(20, contentRect.left - 90)}px`; // 90px = 70px width + 20px gap
+        buttonsRef.current.style.top = `${navbarHeight + 20}px`;
+        buttonsRef.current.style.bottom = bottomValue;
+        buttonsRef.current.style.height = 'auto'; // Let bottom constraint handle height
+      }
+    };
+
+    updateButtonPosition();
+    window.addEventListener('resize', updateButtonPosition);
+    window.addEventListener('scroll', updateButtonPosition);
+
+    return () => {
+      window.removeEventListener('resize', updateButtonPosition);
+      window.removeEventListener('scroll', updateButtonPosition);
+    };
+  }, []);
+
   // Block management functions
   const addBlock = (type) => {
     const newBlock = {
@@ -371,6 +813,8 @@ const Write = () => {
         ? { text: "", level: 1 }
         : type === BlockTypes.IMAGE
         ? { url: "", alt: "" }
+        : type === BlockTypes.GALLERY
+        ? { images: [{ url: "", alt: "" }], autoPlay: true, interval: 3000 }
         : { text: "" },
     };
     setBlocks([...blocks, newBlock]);
@@ -546,6 +990,15 @@ const Write = () => {
             onDelete={() => deleteBlock(block.id)}
           />
         );
+      case BlockTypes.GALLERY:
+        return (
+          <GalleryBlock
+            key={block.id}
+            block={block}
+            onUpdate={updateBlock}
+            onDelete={() => deleteBlock(block.id)}
+          />
+        );
       default:
         return null;
     }
@@ -553,8 +1006,9 @@ const Write = () => {
 
   return (
     <div className="add">
-      <div className="content">
+      <div className="content" ref={contentRef}>
         <input
+          ref={titleInputRef}
           type="text"
           placeholder="Tiêu đề bài viết"
           value={title}
@@ -562,51 +1016,116 @@ const Write = () => {
           style={{ width: "100%", padding: "15px", fontSize: "24px", marginBottom: "20px", borderRadius: "4px", border: "1px solid #ddd" }}
         />
         
+        <div className="add-block-buttons" ref={buttonsRef} style={{ 
+          position: "fixed",
+          zIndex: 999,
+          display: "flex", 
+          flexDirection: "column",
+          gap: "10px", 
+          backgroundColor: "#fff",
+          padding: "15px 10px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          border: "1px solid #ddd",
+          width: "70px",
+          alignItems: "center",
+          overflowY: "auto"
+        }}>
+          <button
+            onClick={() => addBlock(BlockTypes.HEADER)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              fontSize: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+            title="Thêm Tiêu đề"
+          >
+            H
+          </button>
+          <button
+            onClick={() => addBlock(BlockTypes.PARAGRAPH)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#2196F3",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              fontSize: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+            title="Thêm Đoạn văn"
+          >
+            P
+          </button>
+          <button
+            onClick={() => addBlock(BlockTypes.IMAGE)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#FF9800",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              fontSize: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+            title="Thêm Ảnh"
+          >
+            🖼️
+          </button>
+          <button
+            onClick={() => addBlock(BlockTypes.GALLERY)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#9C27B0",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              fontSize: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+            title="Thêm Gallery"
+          >
+            🖼️🖼️
+          </button>
+        </div>
+        
         <div className="block-editor" style={{ minHeight: "400px", padding: "20px", border: "1px solid #ddd", borderRadius: "4px", backgroundColor: "#f9f9f9" }}>
-          <div className="add-block-buttons" style={{ marginBottom: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <button
-              onClick={() => addBlock(BlockTypes.HEADER)}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#4CAF50",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontWeight: "bold"
-              }}
-            >
-              + Thêm Tiêu đề
-            </button>
-            <button
-              onClick={() => addBlock(BlockTypes.PARAGRAPH)}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#2196F3",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontWeight: "bold"
-              }}
-            >
-              + Thêm Đoạn văn
-            </button>
-            <button
-              onClick={() => addBlock(BlockTypes.IMAGE)}
-              style={{
-                padding: "10px 20px",
-                backgroundColor: "#FF9800",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontWeight: "bold"
-              }}
-            >
-              + Thêm Ảnh
-            </button>
-          </div>
 
           {blocks.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
@@ -623,17 +1142,36 @@ const Write = () => {
                       style={{
                         position: "absolute",
                         top: "5px",
-                        right: "50px",
-                        padding: "5px 10px",
-                        backgroundColor: "#666",
+                        right: "35px",
+                        padding: "6px 10px",
+                        backgroundColor: "#4CAF50",
                         color: "white",
                         border: "none",
-                        borderRadius: "3px",
+                        borderRadius: "6px",
                         cursor: "pointer",
-                        fontSize: "12px"
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "all 0.2s ease",
+                        zIndex: 10,
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = "#45a049";
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "#4CAF50";
+                        e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
                       }}
                     >
-                      ↑ Lên
+                      ↑
                     </button>
                   )}
                   {index < blocks.length - 1 && (
@@ -643,16 +1181,35 @@ const Write = () => {
                         position: "absolute",
                         top: "5px",
                         right: "5px",
-                        padding: "5px 10px",
-                        backgroundColor: "#666",
+                        padding: "6px 10px",
+                        backgroundColor: "#2196F3",
                         color: "white",
                         border: "none",
-                        borderRadius: "3px",
+                        borderRadius: "6px",
                         cursor: "pointer",
-                        fontSize: "12px"
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "all 0.2s ease",
+                        zIndex: 10,
+                        width: "32px",
+                        height: "32px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = "#0b7dda";
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 4px 6px rgba(0,0,0,0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "#2196F3";
+                        e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
                       }}
                     >
-                      ↓ Xuống
+                      ↓
                     </button>
                   )}
                 </div>
