@@ -117,11 +117,6 @@ const Profile = () => {
         {/* --- SIDEBAR --- */}
         <div className="sidebar">
           <div className="sidebar-home-btn">
-            <Link to="/" className="back-link">
-               <FaArrowLeft className="icon-arrow" />
-               <span className="logo-text">MyNews</span>
-               <span className="small-text">Trang chủ</span>
-            </Link>
           </div>
 
           <div className="user-info-header">
@@ -137,13 +132,13 @@ const Profile = () => {
             {/* HIỂN THỊ SỐ LIỆU THỰC TẾ */}
             <li>
               <Link to="/saved-posts" style={{display:"flex", alignItems:"center", width:"100%", color:"inherit", textDecoration:"none"}}>
-                 <FaBookmark className="icon gray" /> Tin bài đã lưu 
+                 <FaBookmark className="icon gray" /> Tin bài đã lưu:  
                  <span className="badge">{stats.savedCount}</span>
               </Link>
             </li>
             <li>
               <Link to="/viewed-posts" style={{display:"flex", alignItems:"center", width:"100%", color:"inherit", textDecoration:"none"}}>
-                 <FaList className="icon gray" /> Tin bài đã xem 
+                 <FaList className="icon gray" /> Tin bài đã xem : 
                  <span className="badge">{stats.viewedCount}</span>
               </Link>
             </li>
