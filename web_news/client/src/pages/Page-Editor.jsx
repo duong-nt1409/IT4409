@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import axios from "../utils/axios";
 import { FaThumbsUp, FaComment, FaEye, FaClock, FaSort } from "react-icons/fa";
+import "../style_editor.scss";
 
 const defaultAvatar =
   "https://cdn-icons-png.flaticon.com/512/149/149071.png";

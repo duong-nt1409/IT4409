@@ -135,15 +135,40 @@ const seed = async () => {
     }
     console.log("ReadHistory inserted.");
 
-    // 5. Update view_count
+    // 5. Ensure view_count column exists in Posts table
+    console.log("Checking view_count column...");
+    try {
+      const columnCheck = await query(`
+        SELECT COUNT(*) as count
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'Posts'
+        AND COLUMN_NAME = 'view_count'
+      `);
+      
+      if (columnCheck[0].count === 0) {
+        await query(`
+          ALTER TABLE Posts 
+          ADD COLUMN view_count INT DEFAULT 0
+        `);
+        console.log("view_count column added to Posts table.");
+      } else {
+        console.log("view_count column already exists.");
+      }
+    } catch (err) {
+      console.error("Error checking/adding view_count column:", err.message);
+      throw err;
+    }
+
+    // 6. Update view_count
     console.log("Updating view_count...");
     await query(`
-      UPDATE Posts p
-      SET view_count = (
+      UPDATE Posts
+      SET view_count = COALESCE((
         SELECT COUNT(*)
-        FROM ReadHistory rh
-        WHERE rh.post_id = p.id
-      )
+        FROM ReadHistory
+        WHERE ReadHistory.post_id = Posts.id
+      ), 0)
     `);
     console.log("view_count updated.");
 

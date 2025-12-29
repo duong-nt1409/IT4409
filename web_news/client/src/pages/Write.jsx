@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import axios from "../utils/axios";
+import "../style_editor.scss";
 
 // Block component types
 const BlockTypes = {
@@ -9,6 +10,7 @@ const BlockTypes = {
   PARAGRAPH: "paragraph",
   IMAGE: "image",
   GALLERY: "gallery",
+  ARTICLE_REFERENCE: "article_reference",
 };
 
 const HeaderBlock = ({ block, onUpdate, onDelete }) => {
@@ -105,14 +107,14 @@ const ParagraphBlock = ({ block, onUpdate, onDelete }) => {
   // Initialize and sync contentEditable with block data
   useEffect(() => {
     if (paraRef.current && !isFocusedRef.current) {
-      const currentText = paraRef.current.textContent || "";
-      const blockText = block.data.text || "";
+      const currentHtml = paraRef.current.innerHTML || "";
+      const blockHtml = block.data.html || block.data.text || "";
       // Only update if the block data changed externally and element is not focused
-      if (currentText !== blockText) {
-        paraRef.current.textContent = blockText || "";
+      if (currentHtml !== blockHtml) {
+        paraRef.current.innerHTML = blockHtml || "";
       }
     }
-  }, [block.id, block.data.text]); // Include block.data.text but check focus state
+  }, [block.id, block.data.html, block.data.text]); // Include block.data.html but check focus state
 
   const handleFocus = () => {
     isFocusedRef.current = true;
@@ -121,43 +123,26 @@ const ParagraphBlock = ({ block, onUpdate, onDelete }) => {
   const handleBlur = () => {
     isFocusedRef.current = false;
     if (paraRef.current) {
+      const html = paraRef.current.innerHTML || "";
       const text = paraRef.current.textContent || "";
-      onUpdate({ ...block, data: { text } });
+      onUpdate({ ...block, data: { text, html } });
     }
-  };
-
-  const handleInput = () => {
-    // Don't update state during input to avoid re-renders
-    // Only update on blur
   };
 
   return (
     <div className="block-item paragraph-block">
-      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+      <div className="block-controls">
         <button onClick={onDelete} className="delete-block">Xóa</button>
       </div>
       <p
         ref={paraRef}
         contentEditable
         suppressContentEditableWarning
+        className="paragraph-content"
         onFocus={handleFocus}
         onBlur={handleBlur}
-        onInput={handleInput}
         data-placeholder="Nhập đoạn văn..."
-        style={{ 
-          minHeight: "2em", 
-          outline: "none", 
-          padding: "10px", 
-          border: "1px solid #ddd", 
-          borderRadius: "4px"
-        }}
       />
-      <style>{`
-        [contenteditable][data-placeholder]:empty:before {
-          content: attr(data-placeholder);
-          color: #999;
-        }
-      `}</style>
     </div>
   );
 };
@@ -562,6 +547,284 @@ const GalleryBlock = ({ block, onUpdate, onDelete }) => {
   );
 };
 
+const ArticleReferenceBlock = ({ block, onUpdate, onDelete }) => {
+  const [articles, setArticles] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(block.data.article?.title || "");
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(block.data.article || null);
+  const dropdownRef = useRef(null);
+
+  // Update search term when block data changes externally
+  useEffect(() => {
+    if (block.data.article?.title) {
+      setSearchTerm(block.data.article.title);
+      setSelectedArticle(block.data.article);
+    } else {
+      setSearchTerm("");
+      setSelectedArticle(null);
+    }
+  }, [block.data.article]);
+
+  // Fetch articles when searching
+  useEffect(() => {
+    const fetchArticles = async () => {
+      if (searchTerm.trim().length < 2) {
+        setArticles([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const res = await axios.get(`/posts?search=${encodeURIComponent(searchTerm)}&sortBy=time`);
+        // Filter only approved articles
+        const approvedArticles = res.data.filter(article => article.status === 'approved');
+        setArticles(approvedArticles);
+      } catch (err) {
+        console.error("Error fetching articles:", err);
+        setArticles([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchArticles, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectArticle = (article) => {
+    setSelectedArticle(article);
+    setSearchTerm(article.title);
+    setShowDropdown(false);
+    onUpdate({
+      ...block,
+      data: {
+        article: {
+          id: article.id,
+          title: article.title,
+          thumbnail: article.thumbnail,
+          cat_name: article.cat_name,
+        },
+      },
+    });
+  };
+
+  const handleClear = () => {
+    setSelectedArticle(null);
+    setSearchTerm("");
+    setArticles([]);
+    onUpdate({
+      ...block,
+      data: { article: null },
+    });
+  };
+
+  return (
+    <div className="block-item article-reference-block">
+      <div className="block-controls" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", gap: "8px" }}>
+        <button onClick={onDelete} className="delete-block">Xóa</button>
+      </div>
+      <div style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px", backgroundColor: "#fff" }}>
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+            Tìm kiếm bài viết:
+          </label>
+          <div style={{ position: "relative" }} ref={dropdownRef}>
+            <input
+              type="text"
+              placeholder="hãy nhập tên bài viết bạn muốn tham chiếu"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowDropdown(true);
+                if (!selectedArticle) {
+                  setSelectedArticle(null);
+                }
+              }}
+              onFocus={() => {
+                if (articles.length > 0) {
+                  setShowDropdown(true);
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                fontSize: "14px",
+              }}
+            />
+            {isSearching && (
+              <div style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)" }}>
+                <span style={{ fontSize: "12px", color: "#999" }}>Đang tìm...</span>
+              </div>
+            )}
+            {showDropdown && articles.length > 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "#fff",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  marginTop: "4px",
+                  maxHeight: "300px",
+                  overflowY: "auto",
+                  zIndex: 1000,
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                {articles.map((article) => (
+                  <div
+                    key={article.id}
+                    onClick={() => handleSelectArticle(article)}
+                    style={{
+                      padding: "12px",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #eee",
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "center",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f5f5f5";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#fff";
+                    }}
+                  >
+                    {article.thumbnail && (
+                      <img
+                        src={article.thumbnail}
+                        alt={article.title}
+                        style={{
+                          width: "60px",
+                          height: "40px",
+                          objectFit: "cover",
+                          borderRadius: "4px",
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: "600", fontSize: "14px", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {article.title}
+                      </div>
+                      {article.cat_name && (
+                        <div style={{ fontSize: "12px", color: "#666" }}>
+                          {article.cat_name}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {showDropdown && searchTerm.length >= 2 && !isSearching && articles.length === 0 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "#fff",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  marginTop: "4px",
+                  padding: "12px",
+                  zIndex: 1000,
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                <div style={{ color: "#999", fontSize: "14px" }}>Không tìm thấy bài viết nào</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {selectedArticle && (
+          <div
+            style={{
+              border: "2px solid #4CAF50",
+              borderRadius: "8px",
+              padding: "15px",
+              backgroundColor: "#f9fff9",
+              marginTop: "10px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+              <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#333" }}>
+                Bài viết đã chọn:
+              </h4>
+              <button
+                onClick={handleClear}
+                style={{
+                  padding: "4px 8px",
+                  backgroundColor: "#dc3545",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                Xóa
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+              {selectedArticle.thumbnail && (
+                <img
+                  src={selectedArticle.thumbnail}
+                  alt={selectedArticle.title}
+                  style={{
+                    width: "120px",
+                    height: "80px",
+                    objectFit: "cover",
+                    borderRadius: "4px",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: "600", fontSize: "15px", marginBottom: "6px", color: "#333" }}>
+                  {selectedArticle.title}
+                </div>
+                {selectedArticle.cat_name && (
+                  <div style={{ fontSize: "13px", color: "#666", marginBottom: "4px" }}>
+                    Danh mục: {selectedArticle.cat_name}
+                  </div>
+                )}
+                <div style={{ fontSize: "12px", color: "#999" }}>
+                  ID: {selectedArticle.id}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Write = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -597,8 +860,8 @@ const Write = () => {
             return `<h${level}>${headerText}</h${level}>`;
           }
           case BlockTypes.PARAGRAPH: {
-            const paraText = block.data.text || "";
-            return `<p>${paraText}</p>`;
+            const paraHtml = block.data.html || block.data.text || "";
+            return `<p>${paraHtml}</p>`;
           }
           case BlockTypes.IMAGE: {
             const imgUrl = block.data.url || "";
@@ -617,6 +880,26 @@ const Write = () => {
               `<img src="${img.url}" alt="${img.alt || ''}" data-gallery-image />`
             ).join("");
             return `<div class="gallery-container" data-autoplay="${autoPlay}" data-interval="${interval}">${imagesHTML}</div>`;
+          }
+          case BlockTypes.ARTICLE_REFERENCE: {
+            const article = block.data.article;
+            if (!article || !article.id) return "";
+            
+            const articleId = article.id;
+            const articleTitle = article.title || "";
+            const articleThumbnail = article.thumbnail || "";
+            const articleCategory = article.cat_name || "";
+            
+            return `<div class="article-reference-container" data-article-id="${articleId}">
+              <a href="/post/${articleId}" class="article-reference-link" style="display: flex; gap: 15px; padding: 15px; border: 2px solid #4CAF50; border-radius: 8px; text-decoration: none; color: inherit; background-color: #f9fff9; transition: all 0.2s;">
+                ${articleThumbnail ? `<img src="${articleThumbnail}" alt="${articleTitle}" style="width: 120px; height: 80px; object-fit: cover; border-radius: 4px;" />` : ""}
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #333;">${articleTitle}</h4>
+                  ${articleCategory ? `<div style="font-size: 13px; color: #666; margin-bottom: 4px;">Danh mục: ${articleCategory}</div>` : ""}
+                  <div style="font-size: 12px; color: #999;">Xem bài viết →</div>
+                </div>
+              </a>
+            </div>`;
           }
           default:
             return "";
@@ -652,6 +935,7 @@ const Write = () => {
             },
           });
         } else if (tagName === "p") {
+          const html = node.innerHTML || "";
           const text = node.textContent || "";
           if (text.trim() !== "") {
             blocks.push({
@@ -659,6 +943,7 @@ const Write = () => {
               type: BlockTypes.PARAGRAPH,
               data: {
                 text: text,
+                html: html,
               },
             });
           }
@@ -694,6 +979,28 @@ const Write = () => {
                 images: images,
                 autoPlay: autoPlay,
                 interval: interval,
+              },
+            });
+          }
+        } else if (tagName === "div" && node.classList.contains("article-reference-container")) {
+          // Parse article reference
+          const articleId = node.getAttribute("data-article-id");
+          const link = node.querySelector("a.article-reference-link");
+          const img = link?.querySelector("img");
+          const titleEl = link?.querySelector("h4");
+          const categoryEl = link?.querySelector("div");
+          
+          if (articleId) {
+            blocks.push({
+              id: blockId++,
+              type: BlockTypes.ARTICLE_REFERENCE,
+              data: {
+                article: {
+                  id: parseInt(articleId),
+                  title: titleEl?.textContent || "",
+                  thumbnail: img?.getAttribute("src") || "",
+                  cat_name: categoryEl?.textContent?.replace("Danh mục: ", "") || "",
+                },
               },
             });
           }
@@ -815,7 +1122,9 @@ const Write = () => {
         ? { url: "", alt: "" }
         : type === BlockTypes.GALLERY
         ? { images: [{ url: "", alt: "" }], autoPlay: true, interval: 3000 }
-        : { text: "" },
+        : type === BlockTypes.ARTICLE_REFERENCE
+        ? { article: null }
+        : { text: "", html: "" },
     };
     setBlocks([...blocks, newBlock]);
   };
@@ -999,6 +1308,15 @@ const Write = () => {
             onDelete={() => deleteBlock(block.id)}
           />
         );
+      case BlockTypes.ARTICLE_REFERENCE:
+        return (
+          <ArticleReferenceBlock
+            key={block.id}
+            block={block}
+            onUpdate={updateBlock}
+            onDelete={() => deleteBlock(block.id)}
+          />
+        );
       default:
         return null;
     }
@@ -1122,6 +1440,29 @@ const Write = () => {
             title="Thêm Gallery"
           >
             🖼️🖼️
+          </button>
+          <button
+            onClick={() => addBlock(BlockTypes.ARTICLE_REFERENCE)}
+            style={{
+              padding: "12px",
+              backgroundColor: "#E91E63",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              width: "100%",
+              fontSize: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+            title="Thêm Tham chiếu Bài viết"
+          >
+            🔗
           </button>
         </div>
         

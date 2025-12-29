@@ -44,10 +44,10 @@ export const getUserStats = (req, res) => {
 export const getEditorStats = (req, res) => {
   const userId = req.params.id;
 
-  // Query lấy thống kê cho Editor
+  // Query lấy thống kê cho Editor - tính years_of_experience động từ created_at
   const q = `
     SELECT 
-      u.years_of_experience,
+      TIMESTAMPDIFF(YEAR, u.created_at, NOW()) as years_of_experience,
       u.status as editor_status,
       u.created_at as editor_since,
       COUNT(DISTINCT p.id) as total_posts,
@@ -61,14 +61,14 @@ export const getEditorStats = (req, res) => {
     LEFT JOIN Posts p ON u.id = p.user_id
     LEFT JOIN NewsStats ns ON p.id = ns.post_id
     WHERE u.id = ?
-    GROUP BY u.id, u.years_of_experience, u.status, u.created_at
+    GROUP BY u.id, u.status, u.created_at
   `;
 
   db.query(q, [userId, userId, userId], (err, data) => {
     if (err) return res.status(500).json(err);
     if (data.length === 0) {
       // If no posts, return basic editor info
-      const basicQ = `SELECT years_of_experience, status as editor_status, created_at as editor_since FROM Users WHERE id = ?`;
+      const basicQ = `SELECT TIMESTAMPDIFF(YEAR, created_at, NOW()) as years_of_experience, status as editor_status, created_at as editor_since FROM Users WHERE id = ?`;
       db.query(basicQ, [userId], (err2, basicData) => {
         if (err2) return res.status(500).json(err2);
         return res.status(200).json({
