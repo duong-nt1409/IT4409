@@ -327,5 +327,112 @@ $border-color: #e9ecef;
       background: white;
       border-radius: 16px;
     }
+
+    .reports-section {
+      h2 {
+        margin-bottom: 24px;
+        color: $text-color;
+        font-size: 24px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        font-size: 1.1rem;
+        color: $gray-text;
+        border: 1px solid $border-color;
+      }
+
+      .post-link {
+        color: $text-color;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s;
+        display: block;
+        font-size: 15px;
+        
+        &:hover {
+          color: $primary-color;
+        }
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        
+        strong {
+          font-weight: 600;
+          color: $text-color;
+        }
+      }
+
+      .badge-report {
+        background-color: #ffebee;
+        color: #d32f2f;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-block;
+      }
+
+      .btn-delete-report {
+        background-color: white;
+        color: #d32f2f;
+        border: 1px solid #ffcdd2;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+
+        &:hover {
+          background-color: #d32f2f;
+          color: white;
+          border-color: #d32f2f;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      .btn-dismiss-report {
+        background-color: white;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+
+        &:hover {
+          background-color: #2e7d32;
+          color: white;
+          border-color: #2e7d32;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
   }
 }

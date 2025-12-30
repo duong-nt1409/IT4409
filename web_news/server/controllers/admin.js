@@ -19,7 +19,9 @@ export const getDashboardStats = (req, res) => {
 export const getEditorsList = (req, res) => {
   const q = `
     SELECT 
-      u.id, u.username, u.email, u.avatar, u.name, u.age, u.years_of_experience, u.created_at,
+      u.id, u.username, u.email, u.avatar, u.name, u.age, 
+      TIMESTAMPDIFF(YEAR, u.created_at, NOW()) as years_of_experience, 
+      u.created_at,
       COUNT(p.id) as post_count,
       COALESCE(SUM(ns.view_count), 0) as total_views,
       COALESCE(SUM(ns.comment_count), 0) as total_comments
@@ -77,7 +79,9 @@ export const deleteUser = (req, res) => {
 
 export const getPendingEditors = (req, res) => {
   const q = `
-    SELECT id, username, email, name, age, years_of_experience, created_at, avatar
+    SELECT id, username, email, name, age, 
+           TIMESTAMPDIFF(YEAR, created_at, NOW()) as years_of_experience, 
+           created_at, avatar
     FROM Users
     WHERE role_id = 2 AND status = 'pending'
     ORDER BY created_at ASC
@@ -108,5 +112,30 @@ export const deletePost = (req, res) => {
   db.query(q, [postId], (err, data) => {
     if (err) return res.status(500).json(err);
     return res.status(200).json("Đã xóa bài viết!");
+  });
+};
+
+export const getReportedPosts = (req, res) => {
+  const q = `
+    SELECT p.id, p.title, u.username as author_name, COUNT(r.id) as report_count
+    FROM Posts p
+    JOIN Users u ON p.user_id = u.id
+    JOIN Reports r ON p.id = r.post_id
+    GROUP BY p.id
+    ORDER BY report_count DESC
+  `;
+  db.query(q, (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json(data);
+  });
+};
+
+export const deleteReports = (req, res) => {
+  const postId = req.params.id;
+  const q = "DELETE FROM Reports WHERE post_id = ?";
+
+  db.query(q, [postId], (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json("Đã xóa báo cáo của bài viết!");
   });
 };

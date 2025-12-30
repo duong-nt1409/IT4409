@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import moment from "moment";
+import Trending from "../components/Trending";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -10,6 +11,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const query = cat ? cat : "?sortBy=random";
         const res = await axios.get(`http://localhost:8800/api/posts${cat}`);
         setPosts(res.data);
       } catch (err) {
@@ -54,7 +56,7 @@ const Home = () => {
 
           {/* 2. 3 TIN PHỤ NẰM NGANG (Bài 2, 3, 4) */}
           <div className="sub-news-row">
-            {posts.slice(1, 4).map((post) => (
+            {posts.slice(1,4).map((post, index) => (
               <div className="sub-post" key={post.id}>
                 <div className="img-container">
                   <Link to={`/post/${post.id}`}>
@@ -73,7 +75,7 @@ const Home = () => {
 
         {/* --- CỘT PHẢI (DANH SÁCH TIN) --- */}
         <div className="sidebar-col">
-          {posts.slice(4).map((post) => (
+          {posts.slice( 4).map((post, index) => (
             <div className="sidebar-post" key={post.id}>
               <div className="info">
                 <Link to={`/post/${post.id}`} className="link">
@@ -92,6 +94,7 @@ const Home = () => {
         </div>
 
       </div>
+      <Trending />
     </div>
   );
 };
