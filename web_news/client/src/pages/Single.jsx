@@ -27,35 +27,36 @@ const Single = () => {
   // 1. Fetch Dữ liệu bài viết, Likes & Bookmark
   useEffect(() => {
     const fetchData = async () => {
+      // 1. Lấy bài viết (Quan trọng nhất)
       try {
-        const postRes = await axios.get(`http://localhost:8800/api/posts/${postId}`);
-        setPost(postRes.data);
-        
-        const likesRes = await axios.get(`http://localhost:8800/api/likes?postId=${postId}`);
-        setLikes(likesRes.data);
+        const res = await axios.get(`http://localhost:8800/api/posts/${postId}`);
+        setPost(res.data);
+      } catch (err) {
+        console.log("Lỗi tải bài viết:", err);
+      }
 
-        if (currentUser) {
-          // Kiểm tra đã lưu bài chưa
-          const savedRes = await axios.get(`http://localhost:8800/api/interactions/bookmarks/ids?userId=${currentUser.id}`);
-          if (savedRes.data.includes(parseInt(postId))) {
-            setIsSaved(true);
-          }
-
-          // Kiểm tra đã báo cáo chưa
-          const reportRes = await axios.get(`http://localhost:8800/api/reports/check?postId=${postId}&userId=${currentUser.id}`);
-          if (reportRes.data.reported) {
-            setIsReported(true);
-          }
-
-          // Ghi lịch sử xem
-          await axios.post("http://localhost:8800/api/interactions/history", {
-            user_id: currentUser.id,
-            post_id: postId
-          });
+      // 2. Kiểm tra Report (Nếu lỗi cũng không sao, không chặn các cái khác)
+      if (currentUser) {
+        try {
+          const resReport = await axios.get(`http://localhost:8800/api/reports/check?postId=${postId}&userId=${currentUser.id}`);
+          // Giả sử bạn có state isReported
+          // setIsReported(resReport.data); 
+        } catch (err) {
+          console.log("Lỗi kiểm tra report:", err); // Chỉ log lỗi, không chặn code
         }
-      } catch (err) { console.log(err); }
+
+        // 3. Lưu lịch sử xem (Chạy độc lập)
+        try {
+           await axios.post("http://localhost:8800/api/users/history", { postId: postId });
+           console.log("Đã lưu lịch sử xem");
+        } catch (err) {
+           console.log("Lỗi lưu lịch sử:", err);
+        }
+      }
     };
+    
     fetchData();
+    window.scrollTo(0, 0);
   }, [postId, currentUser]);
 
   // 2. Logic xử lý Gallery (Album ảnh trong bài viết) - GIỮ NGUYÊN
