@@ -8,12 +8,15 @@ import Comments from "../components/Comments";
 import Weather from "../components/Weather";
 import Trending from "../components/Trending";
 // Import icon
-import { FaBookmark, FaRegBookmark, FaThumbsUp } from "react-icons/fa"; 
+import { FaBookmark, FaRegBookmark, FaThumbsUp, FaFlag } from "react-icons/fa"; 
 
 const Single = () => {
   const [post, setPost] = useState({});
   const [likes, setLikes] = useState([]);
   const [isSaved, setIsSaved] = useState(false);
+  const [isReported, setIsReported] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
   const galleryIntervalsRef = useRef([]);
 
   const location = useLocation();
@@ -36,6 +39,12 @@ const Single = () => {
           const savedRes = await axios.get(`http://localhost:8800/api/interactions/bookmarks/ids?userId=${currentUser.id}`);
           if (savedRes.data.includes(parseInt(postId))) {
             setIsSaved(true);
+          }
+
+          // Kiểm tra đã báo cáo chưa
+          const reportRes = await axios.get(`http://localhost:8800/api/reports/check?postId=${postId}&userId=${currentUser.id}`);
+          if (reportRes.data.reported) {
+            setIsReported(true);
           }
 
           // Ghi lịch sử xem
@@ -161,6 +170,31 @@ const Single = () => {
     } catch (err) { console.log(err); }
   };
 
+  const handleReport = () => {
+    if (!currentUser) return alert("Bạn cần đăng nhập để báo cáo bài viết!");
+    if (isReported) return alert("Bạn đã báo cáo bài viết này rồi!");
+    setShowReportModal(true);
+  };
+
+  const submitReport = async () => {
+    if (!reportReason.trim()) return alert("Vui lòng nhập lý do báo cáo!");
+
+    try {
+      await axios.post("http://localhost:8800/api/reports", { 
+        user_id: currentUser.id,
+        post_id: postId, 
+        reason: reportReason 
+      });
+      setIsReported(true);
+      setShowReportModal(false);
+      setReportReason("");
+      alert("Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét bài viết này.");
+    } catch (err) {
+      console.log(err);
+      alert("Lỗi khi gửi báo cáo!");
+    }
+  };
+
   const handleDelete = async () => {
     if(!window.confirm("Bạn có chắc chắn muốn xóa bài viết này?")) return;
     try {
@@ -209,6 +243,10 @@ const Single = () => {
             {isSaved ? <FaBookmark /> : <FaRegBookmark />} 
             {isSaved ? "Đã lưu" : "Lưu bài"}
           </button>
+
+          <button onClick={handleReport} className={`report-button ${isReported ? 'reported' : ''}`} style={{marginLeft: "10px", color: isReported ? "red" : "gray", border: "none", background: "none", cursor: "pointer"}}>
+            <FaFlag /> {isReported ? "Đã báo cáo" : "Báo cáo"}
+          </button>
         </div>
 
         {/* Nội dung bài viết (Rich Text) */}
@@ -228,6 +266,38 @@ const Single = () => {
         <Weather/>
       </div>
     </div>
+
+    {/* REPORT MODAL */}
+    {showReportModal && (
+      <div className="modal-overlay" style={{
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
+        justifyContent: "center", alignItems: "center", zIndex: 1000
+      }}>
+        <div className="modal-content" style={{
+          backgroundColor: "white", padding: "20px", borderRadius: "8px",
+          width: "400px", maxWidth: "90%"
+        }}>
+          <h3 style={{marginTop: 0}}>Báo cáo bài viết</h3>
+          <p>Hãy cho chúng tôi biết lý do bạn báo cáo bài viết này:</p>
+          <textarea 
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Nhập lý do..."
+            style={{width: "100%", height: "100px", padding: "10px", marginBottom: "10px"}}
+          />
+          <div style={{display: "flex", justifyContent: "flex-end", gap: "10px"}}>
+            <button onClick={() => setShowReportModal(false)} style={{
+              padding: "8px 16px", border: "1px solid #ccc", background: "white", cursor: "pointer", borderRadius: "4px"
+            }}>Hủy</button>
+            <button onClick={submitReport} style={{
+              padding: "8px 16px", border: "none", background: "#d32f2f", color: "white", cursor: "pointer", borderRadius: "4px"
+            }}>Gửi Báo Cáo</button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <Trending />
     </>
   );

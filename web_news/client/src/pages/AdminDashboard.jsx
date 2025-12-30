@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [editors, setEditors] = useState([]);
   const [pendingEditors, setPendingEditors] = useState([]);
   const [pendingPosts, setPendingPosts] = useState([]);
+  const [reportedPosts, setReportedPosts] = useState([]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -36,6 +37,9 @@ const AdminDashboard = () => {
 
         const postsRes = await axios.get("/admin/posts/pending");
         setPendingPosts(postsRes.data);
+
+        const reportsRes = await axios.get("/admin/reports");
+        setReportedPosts(reportsRes.data);
       } catch (err) {
         console.error(err);
       }
@@ -102,6 +106,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDismissReport = async (postId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn loại bỏ báo cáo này? Bài viết sẽ được giữ lại.")) return;
+    try {
+      await axios.delete(`/admin/reports/${postId}`);
+      alert("Đã loại bỏ báo cáo!");
+      setReportedPosts(reportedPosts.filter((post) => post.id !== postId));
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi loại bỏ báo cáo!");
+    }
+  };
+
   const handleDeleteEditor = async (userId) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa Editor này? Hành động này không thể hoàn tác.")) return;
     try {
@@ -157,6 +173,15 @@ const AdminDashboard = () => {
             <i className="icon">📝</i> Duyệt Bài Viết
             {pendingPosts.length > 0 && (
               <span className="badge">{pendingPosts.length}</span>
+            )}
+          </button>
+          <button
+            className={activeTab === "reports" ? "active" : ""}
+            onClick={() => setActiveTab("reports")}
+          >
+            <i className="icon">🚩</i> Báo Cáo
+            {reportedPosts.length > 0 && (
+              <span className="badge">{reportedPosts.length}</span>
             )}
           </button>
         </nav>
@@ -308,6 +333,68 @@ const AdminDashboard = () => {
                               onClick={() => handleRejectEditor(editor.id)}
                             >
                               ❌ Từ chối
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: REPORTS */}
+        {activeTab === "reports" && (
+          <div className="reports-section">
+            <h2>Báo Cáo Vi Phạm</h2>
+            {reportedPosts.length === 0 ? (
+              <p className="empty-state">🎉 Không có bài viết nào bị báo cáo!</p>
+            ) : (
+              <div className="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{width: "40%"}}>Bài Viết</th>
+                      <th>Tác Giả</th>
+                      <th style={{textAlign: "center"}}>Số Lượng Báo Cáo</th>
+                      <th style={{textAlign: "center"}}>Hành Động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportedPosts.map((post) => (
+                      <tr key={post.id}>
+                        <td>
+                          <a href={`/post/${post.id}`} target="_blank" rel="noreferrer" className="post-link">
+                            {post.title}
+                          </a>
+                        </td>
+                        <td>
+                          <div className="user-info">
+                            <div style={{display: "flex", flexDirection: "column"}}>
+                                <strong>{post.author_name}</strong>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{textAlign: "center"}}>
+                            <span className="badge-report">{post.report_count}</span>
+                        </td>
+                        <td style={{textAlign: "center"}}>
+                          <div style={{display: "flex", gap: "8px", justifyContent: "center"}}>
+                            <button
+                              className="btn-delete-report"
+                              onClick={() => handleDeletePost(post.id)}
+                              title="Xóa bài viết vĩnh viễn"
+                            >
+                              🗑️ Xóa Bài
+                            </button>
+                            <button
+                              className="btn-dismiss-report"
+                              onClick={() => handleDismissReport(post.id)}
+                              title="Báo cáo sai - Giữ bài viết"
+                            >
+                              ✅ Giữ Bài
                             </button>
                           </div>
                         </td>

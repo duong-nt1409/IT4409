@@ -114,3 +114,28 @@ export const deletePost = (req, res) => {
     return res.status(200).json("Đã xóa bài viết!");
   });
 };
+
+export const getReportedPosts = (req, res) => {
+  const q = `
+    SELECT p.id, p.title, u.username as author_name, COUNT(r.id) as report_count
+    FROM Posts p
+    JOIN Users u ON p.user_id = u.id
+    JOIN Reports r ON p.id = r.post_id
+    GROUP BY p.id
+    ORDER BY report_count DESC
+  `;
+  db.query(q, (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json(data);
+  });
+};
+
+export const deleteReports = (req, res) => {
+  const postId = req.params.id;
+  const q = "DELETE FROM Reports WHERE post_id = ?";
+
+  db.query(q, [postId], (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json("Đã xóa báo cáo của bài viết!");
+  });
+};

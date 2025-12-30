@@ -13,6 +13,8 @@ import likeRoutes from "./routes/likes.js";
 import userRoutes from "./routes/users.js";
 import interactionRoutes from "./routes/interactions.js";
 import categoryRoutes from "./routes/category.js";
+import reportRoutes from "./routes/reports.js";
+import aiRoutes from "./routes/ai.js";
 
 const app = express();
 
@@ -75,6 +77,8 @@ app.use("/api/likes", likeRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interactions", interactionRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/chat", aiRoutes);
 
 const PORT = process.env.PORT || 8800;
 app.listen(PORT, () => {

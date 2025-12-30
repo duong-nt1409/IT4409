@@ -10,6 +10,7 @@ import Single from "./pages/Single";
 import Write from "./pages/Write";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import Chatbot from "./components/Chatbot";
 import ErrorPage from "./pages/Error";
 import RegisterEditor from "./pages/Register-Editor";
 import EditorPage from "./pages/Page-Editor";
@@ -31,6 +32,7 @@ const Layout = () => {
       <div className="main-content">
         <Outlet />
       </div>
+      <Chatbot />
       <Footer />
     </div>
   );
