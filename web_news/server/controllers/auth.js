@@ -1,54 +1,47 @@
 import { db } from "../db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken"; 
+// Thư viện Google Auth mới thêm
+import { OAuth2Client } from "google-auth-library";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 const EDITOR_ROLE_ID = 2;
 
 // --- CẤU HÌNH REGEX (LUẬT KIỂM TRA) ---
-
-// 1. Regex kiểm tra Email: Phải có dạng abc@xyz.com
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// 2. Regex kiểm tra Password: 
-
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$/;
+
+// --- CẤU HÌNH GOOGLE CLIENT ---
+// Bạn nhớ tạo biến môi trường GOOGLE_CLIENT_ID trong file .env nhé
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const register = (req, res) => {
   const { username, email, password } = req.body;
 
-  // --- BƯỚC 1: VALIDATE DỮ LIỆU ĐẦU VÀO ---
-
-  // Kiểm tra điền thiếu thông tin
   if (!username || !email || !password) {
     return res.status(400).json("Vui lòng nhập đầy đủ thông tin!");
   }
 
-  // Kiểm tra định dạng Email
   if (!emailRegex.test(email)) {
     return res.status(400).json("Email không hợp lệ! (Ví dụ: user@example.com)");
   }
 
-  // Kiểm tra độ mạnh Mật khẩu
   if (!passwordRegex.test(password)) {
     return res.status(400).json(
       "Mật khẩu phải trên 6 ký tự, bao gồm ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt (@$!%*?&)."
     );
   }
 
-  // --- BƯỚC 2: KIỂM TRA TRÙNG LẶP TRONG DB ---
   const q = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
   db.query(q, [email, username], (err, data) => {
     if (err) return res.status(500).json(err.message || "Lỗi server");
     
     if (data.length) {
-      // Kiểm tra kỹ xem trùng cái gì để báo lỗi chính xác hơn
       if (data[0].email === email) return res.status(409).json("Email này đã được sử dụng!");
       if (data[0].username === username) return res.status(409).json("Tên đăng nhập đã tồn tại!");
     }
 
-    // --- BƯỚC 3: TẠO USER MỚI ---
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
@@ -74,15 +67,14 @@ export const login = (req, res) => {
 
     const user = data[0];
 
-    // --- LOGIC EDITOR CỦA BẠN (GIỮ NGUYÊN) ---
-    // Check editor status if user is an editor (role_id === 2)
-    // Allow pending editors to login, but block rejected ones
     if (Number(user.role_id) === 2) {
       if (user.status === 'rejected') {
         return res.status(403).json("Tài khoản của bạn đã bị từ chối!");
       }
+      if (user.status === 'pending') {
+        return res.status(403).json("Tài khoản Editor của bạn đang chờ Admin phê duyệt.");
+      }
     }
-    // -----------------------------------------
 
     const isPasswordCorrect = bcrypt.compareSync(
       req.body.password,
@@ -92,14 +84,9 @@ export const login = (req, res) => {
     if (!isPasswordCorrect)
       return res.status(400).json("Sai tên đăng nhập hoặc mật khẩu!");
 
-    // --- PHẦN SỬA ĐỔI QUAN TRỌNG ĐỂ HẾT LỖI 401 ---
-    
-    // 1. Tạo Token
     const token = jwt.sign({ id: user.id }, "jwtkey");
-
     const { password_hash, ...other } = user;
 
-    // 2. Gửi Cookie về (Bắt buộc phải có đoạn này)
     res
       .cookie("access_token", token, {
         httpOnly: true,
@@ -112,7 +99,6 @@ export const login = (req, res) => {
 };
 
 export const logout = (req, res) => {
-  // Sửa lại logout để xóa đúng cái cookie access_token
   res.clearCookie("access_token", {
     sameSite: "none",
     secure: true
@@ -130,28 +116,20 @@ export const editorRegister = (req, res) => {
     avatar,
   } = req.body;
 
-  // --- BƯỚC 1: VALIDATE DỮ LIỆU ---
-
-  // 1. Kiểm tra thiếu thông tin quan trọng
   if (!username || !email || !password) {
-    return res
-      .status(400)
-      .json("Vui lòng nhập đầy đủ username, email và password.");
+    return res.status(400).json("Vui lòng nhập đầy đủ username, email và password.");
   }
 
-  // 2. Kiểm tra định dạng Email
   if (!emailRegex.test(email)) {
     return res.status(400).json("Email không hợp lệ! (Ví dụ: editor@example.com)");
   }
 
-  // 3. Kiểm tra độ mạnh Mật khẩu
   if (!passwordRegex.test(password)) {
     return res.status(400).json(
       "Mật khẩu phải trên 6 ký tự, bao gồm ít nhất 1 chữ cái, 1 số và 1 ký tự đặc biệt (@$!%*?&)."
     );
   }
 
-  // --- BƯỚC 2: LOGIC ĐĂNG KÝ (Giữ nguyên) ---
   const checkQuery = "SELECT * FROM Users WHERE email = ? OR username = ?";
 
   db.query(checkQuery, [email, username], (err, data) => {
@@ -172,17 +150,98 @@ export const editorRegister = (req, res) => {
       username,
       email,
       hash,
-      2, // Role Editor
+      2, 
       name || null,
       age ? Number(age) : null,
       years_of_experience ? Number(years_of_experience) : null,
       avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-      'approved' // Mặc định duyệt luôn để bạn test cho dễ
+      'pending'
     ];
 
     db.query(insertQuery, [values], (insertErr) => {
       if (insertErr) return res.status(500).json(insertErr.message || "Lỗi khi tạo tài khoản Editor");
-      return res.status(200).json("Đăng ký Editor thành công! Tài khoản đã được duyệt.");
+      return res.status(200).json("Đăng ký Editor thành công! Vui lòng chờ Admin duyệt.");
     });
   });
+};
+
+// --- HÀM MỚI: XỬ LÝ ĐĂNG NHẬP GOOGLE ---
+export const googleAuth = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // 1. Xác thực token gửi lên từ Frontend với Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    // 2. Lấy thông tin user từ Google
+    const { name, email, picture } = ticket.getPayload();
+
+    // 3. Kiểm tra xem email này đã có trong Database chưa
+    const q = "SELECT * FROM Users WHERE email = ?";
+    db.query(q, [email], (err, data) => {
+      if (err) return res.status(500).json(err);
+
+      if (data.length > 0) {
+        // --- TRƯỜNG HỢP 1: ĐÃ CÓ TÀI KHOẢN ---
+        const user = data[0];
+        
+        // Tạo token JWT
+        const token = jwt.sign({ id: user.id }, "jwtkey");
+        const { password_hash, ...other } = user;
+
+        // Trả về cookie và thông tin user (giống hệt hàm login thường)
+        res
+          .cookie("access_token", token, {
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+          })
+          .status(200)
+          .json(other);
+      } else {
+        // --- TRƯỜNG HỢP 2: CHƯA CÓ TÀI KHOẢN (Tạo mới) ---
+        
+        // Tạo mật khẩu ngẫu nhiên cho user Google (để đảm bảo tính bảo mật và not null)
+        const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(generatedPassword, salt);
+        
+        const roleIdUser = 3; // Role mặc định là User thường
+
+        const qInsert = "INSERT INTO Users(`username`,`email`,`password_hash`, `role_id`, `avatar`) VALUES (?)";
+        const values = [name, email, hash, roleIdUser, picture];
+
+        db.query(qInsert, [values], (err, data) => {
+          if (err) return res.status(500).json(err);
+
+          // Lấy ID vừa tạo để tạo token
+          const token = jwt.sign({ id: data.insertId }, "jwtkey");
+
+          // Tạo object user để trả về frontend
+          const newUser = {
+             id: data.insertId,
+             username: name,
+             email: email,
+             role_id: roleIdUser,
+             avatar: picture
+          };
+
+          res
+            .cookie("access_token", token, {
+              httpOnly: true,
+              sameSite: "none",
+              secure: true,
+            })
+            .status(200)
+            .json(newUser);
+        });
+      }
+    });
+  } catch (err) {
+    console.log("Google Auth Error:", err);
+    res.status(500).json(err);
+  }
 };

@@ -1,6 +1,6 @@
-// client/src/context/authContext.jsx
 import { createContext, useEffect, useState } from "react";
-import axios from "../utils/axios";
+// Đảm bảo đường dẫn import axios đúng với cấu trúc thư mục của bạn
+import axios from "axios"; 
 
 export const AuthContext = createContext();
 
@@ -9,36 +9,32 @@ export const AuthContextProvider = ({ children }) => {
     JSON.parse(localStorage.getItem("user")) || null
   );
 
-  const persistUser = (userData) => {
-    setCurrentUser(userData);
-  };
-
   const login = async (inputs) => {
-    const res = await axios.post("/auth/login", inputs);
-    persistUser(res.data);
-    return res.data;
+    const res = await axios.post("http://localhost:8800/api/auth/login", inputs);
+    setCurrentUser(res.data);
   };
 
-  const logout = async () => {
-    try {
-      await axios.post("/auth/logout");
-    } catch (err) {
-      console.error("Logout failed on server:", err);
-    }
+  // --- THÊM HÀM NÀY VÀO ---
+  const loginWithGoogle = async (token) => {
+    // Gọi API backend mà bạn vừa viết ở bước trước
+    const res = await axios.post("http://localhost:8800/api/auth/google", { token });
+    setCurrentUser(res.data);
+  };
+  // -------------------------
+
+  const logout = async (inputs) => {
+    await axios.post("http://localhost:8800/api/auth/logout");
     setCurrentUser(null);
-    localStorage.removeItem("user");
-  }; 
-  
+  };
+
   useEffect(() => {
     localStorage.setItem("user", JSON.stringify(currentUser));
   }, [currentUser]);
+
   return (
-    <AuthContext.Provider
-      value={{ currentUser, login, logout }}
-    >
+    <AuthContext.Provider value={{ currentUser, login, logout, loginWithGoogle }}> 
+    {/* Nhớ thêm loginWithGoogle vào value ở dòng trên */}
       {children}
     </AuthContext.Provider>
   );
 };
-
-export default AuthContextProvider;
