@@ -1,5 +1,5 @@
 import { db } from "../db.js";
-
+import jwt from "jsonwebtoken";
 export const updateUser = (req, res) => {
   const userId = req.params.id;
   
@@ -85,5 +85,39 @@ export const getEditorStats = (req, res) => {
     } else {
       return res.status(200).json(data[0]);
     }
+  });
+};
+export const addToHistory = (req, res) => {
+  const token = req.cookies.access_token;
+  if (!token) return res.status(401).json("Not authenticated!");
+
+  jwt.verify(token, "jwtkey", (err, userInfo) => {
+    if (err) return res.status(403).json("Token is not valid!");
+
+    // 1. Kiểm tra xem đã xem chưa (trong bảng readhistory)
+    const qCheck = "SELECT * FROM readhistory WHERE user_id = ? AND post_id = ?";
+    
+    db.query(qCheck, [userInfo.id, req.body.postId], (err, data) => {
+      if (err) return res.status(500).json(err);
+
+      if (data.length > 0) {
+        // 2. Nếu có rồi -> Cập nhật thời gian (created_at hoặc viewed_at tùy cột của bạn)
+        // Giả sử bạn dùng cột 'created_at' mặc định
+        const qUpdate = "UPDATE readhistory SET created_at = NOW() WHERE id = ?";
+        db.query(qUpdate, [data[0].id], (err, data) => {
+            if (err) return res.status(500).json(err);
+            return res.status(200).json("Updated history");
+        });
+      } else {
+        // 3. Nếu chưa -> Thêm mới vào readhistory
+        const qInsert = "INSERT INTO readhistory(`user_id`, `post_id`) VALUES (?)";
+        const values = [userInfo.id, req.body.postId];
+        
+        db.query(qInsert, [values], (err, data) => {
+          if (err) return res.status(500).json(err);
+          return res.status(200).json("Added to history");
+        });
+      }
+    });
   });
 };

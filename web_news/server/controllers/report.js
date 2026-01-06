@@ -48,11 +48,13 @@ export const getReportsForPost = (req, res) => {
 };
 
 export const checkReport = (req, res) => {
-  const { postId, userId } = req.query;
-  const q = "SELECT * FROM Reports WHERE post_id = ? AND user_id = ?";
-  
-  db.query(q, [postId, userId], (err, data) => {
+  const { userId, postId } = req.query; 
+
+  const q = "SELECT * FROM reports WHERE user_id = ? AND post_id = ?";
+
+  db.query(q, [userId, postId], (err, data) => {
     if (err) return res.status(500).json(err);
-    return res.status(200).json({ reported: data.length > 0 });
+    // Trả về true nếu đã có bản ghi, false nếu chưa
+    return res.status(200).json(data.length > 0);
   });
 };

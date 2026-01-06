@@ -134,7 +134,6 @@ export const getHistoryPosts = (req, res) => {
   });
 };
 
-// --- QUAN TRỌNG: HÀM NÀY ĐANG BỊ THIẾU ---
 export const deleteHistory = (req, res) => {
   const userId = req.query.userId;
   const q = "DELETE FROM ReadHistory WHERE user_id = ?";
@@ -142,5 +141,23 @@ export const deleteHistory = (req, res) => {
   db.query(q, [userId], (err, data) => {
     if (err) return res.status(500).json(err);
     return res.status(200).json("Đã xóa toàn bộ lịch sử.");
+  });
+};
+export const getHistory = (req, res) => {
+  const userId = req.query.userId;
+  
+  // Sửa 'viewed_posts' thành 'readhistory'
+  // Lưu ý: Kiểm tra cột thời gian là 'created_at' hay 'viewed_at' trong DB của bạn
+  const q = `
+    SELECT p.*, rh.created_at as viewed_at 
+    FROM readhistory rh 
+    JOIN posts p ON rh.post_id = p.id 
+    WHERE rh.user_id = ? 
+    ORDER BY rh.created_at DESC
+  `;
+
+  db.query(q, [userId], (err, data) => {
+    if (err) return res.status(500).json(err);
+    return res.status(200).json(data);
   });
 };
