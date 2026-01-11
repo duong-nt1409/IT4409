@@ -86,7 +86,25 @@ const Single = () => {
         
         const wrapper = document.createElement('div');
         wrapper.className = 'gallery-wrapper';
-        images.forEach((img, index) => { img.style.display = index === 0 ? 'block' : 'none'; });
+        
+        // Create description elements for each image
+        const descriptions = [];
+        images.forEach((img, index) => {
+          img.style.display = index === 0 ? 'block' : 'none';
+          
+          // Create description element
+          const altText = img.getAttribute('alt') || '';
+          const description = document.createElement('div');
+          description.className = 'gallery-description';
+          description.textContent = altText;
+          // Only show description if it has content
+          const shouldShow = altText.trim() !== '' && index === 0;
+          description.style.display = shouldShow ? 'block' : 'none';
+          descriptions.push(description);
+          
+          // Insert description after image
+          img.parentNode.insertBefore(description, img.nextSibling);
+        });
         
         let currentIndex = 0;
         let intervalId = null;
@@ -102,6 +120,10 @@ const Single = () => {
         
         const showImage = (index) => {
           images.forEach((img, i) => { img.style.display = i === index ? 'block' : 'none'; });
+          descriptions.forEach((desc, i) => { 
+            const altText = images[i]?.getAttribute('alt') || '';
+            desc.style.display = (i === index && altText.trim() !== '') ? 'block' : 'none'; 
+          });
           thumbnails.forEach((thumb, i) => {
             if (i === index) thumb.classList.add('active');
             else thumb.classList.remove('active');

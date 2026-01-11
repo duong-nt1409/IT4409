@@ -53,6 +53,23 @@ a { text-decoration: none; color: inherit; }
       h2 { font-size: 26px; color: $dark-green; font-weight: 800; margin: 0; letter-spacing: -1px; }
     }
 
+    // Hamburger Menu Button (Hidden on desktop, shown on mobile)
+    .mobile-menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: $dark-green;
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.2s;
+      z-index: 1001;
+
+      &:hover {
+        color: darken($dark-green, 10%);
+      }
+    }
+
     .links {
       display: flex;
       align-items: center;
@@ -186,20 +203,39 @@ a { text-decoration: none; color: inherit; }
         }
       }
 
-      // Avatar & Dropdown
-      .user-menu-container {
-        position: relative;
+      // User Profile Link
+      .user-profile-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        transition: 0.2s;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
         
-        .user-trigger {
-          display: flex; align-items: center; gap: 8px; cursor: pointer;
-          padding: 4px 8px; border-radius: 20px; transition: 0.2s;
-          &:hover { background-color: #f5f5f5; }
-
-          .nav-avatar {
-            width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;
-          }
-          .username { font-size: 13px; font-weight: bold; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        &:hover {
+          background-color: #f5f5f5;
         }
+
+        .nav-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 1px solid #ddd;
+        }
+        
+        .username {
+          font-size: 13px;
+          font-weight: bold;
+          max-width: 100px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
 
         .dropdown-menu {
           position: absolute; top: 50px; right: 0; width: 240px;
@@ -236,8 +272,170 @@ a { text-decoration: none; color: inherit; }
         &:hover { background: $dark-green; color: white; }
       }
     }
+
+    // Mobile Menu Dropdown
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 999;
+      max-height: calc(100vh - 60px);
+      overflow-y: auto;
+
+      .mobile-menu-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+
+        .mobile-link {
+          padding: 12px 0;
+          border-bottom: 1px solid #f0f0f0;
+          text-decoration: none;
+          color: inherit;
+
+          &.active {
+            h6 {
+              color: $dark-green;
+              font-weight: 700;
+            }
+          }
+
+          h6 {
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #444;
+            margin: 0;
+            transition: color 0.2s;
+
+            &:hover {
+              color: $dark-green;
+            }
+          }
+
+          &:last-of-type {
+            border-bottom: none;
+          }
+        }
+
+        .mobile-search-bar {
+          position: relative;
+          display: flex;
+          align-items: center;
+          background-color: #f0f2f5;
+          padding: 8px 14px;
+          border-radius: 20px;
+          border: 1px solid transparent;
+          transition: 0.3s;
+          margin: 10px 0;
+
+          &:focus-within {
+            background-color: white;
+            border-color: teal;
+            box-shadow: 0 0 0 2px rgba(0, 128, 128, 0.1);
+          }
+
+          input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 14px;
+            width: 100%;
+            color: #333;
+            
+            &::placeholder {
+              color: #999;
+            }
+          }
+
+          .search-icon {
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+            margin-left: 10px;
+            
+            &:hover {
+              color: teal;
+            }
+          }
+
+          .search-suggestions {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            margin-top: 4px;
+          }
+        }
+
+        .mobile-user-profile-link {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          margin-top: 10px;
+          border-top: 1px solid #f0f0f0;
+          padding-top: 15px;
+          text-decoration: none;
+          color: inherit;
+          border-radius: 8px;
+          transition: 0.2s;
+
+          &:hover {
+            background-color: #f5f5f5;
+          }
+
+          .mobile-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+          }
+
+          .mobile-username {
+            font-size: 15px;
+            font-weight: bold;
+            color: #333;
+          }
+        }
+
+        .mobile-login-link {
+          padding: 12px 20px;
+          background-color: $dark-green;
+          color: white;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          text-align: center;
+          transition: 0.2s;
+          text-decoration: none;
+          margin-top: 10px;
+
+          &:hover {
+            background-color: darken($dark-green, 5%);
+          }
+        }
+      }
+    }
   }
-}
+
 
 // ==========================================
 // 3. HOME PAGE (TRANG CHỦ)
@@ -399,16 +597,31 @@ a { text-decoration: none; color: inherit; }
       
       // Gallery Styles
       .gallery-wrapper {
-        position: relative; margin: 20px 0; border-radius: 8px; overflow: hidden;
+        position: relative; margin: 20px 0; border-radius: 8px;
         
         .gallery-container {
           position: relative;
+          overflow: hidden;
+          border-radius: 8px;
+          width: 100%;
+          max-width: 800px;
+          margin: 0 auto;
           img[data-gallery-image] { 
             width: 100%; 
-            height: auto; 
+            height: 380px;
+            object-fit: cover;
             display: block;
-            border-radius: 8px;
+            border-radius: 8px 8px 0 0;
           }
+        }
+        
+        .gallery-description {
+          padding: 8px 0;
+          margin: 0;
+          font-size: 14px;
+          color: #555;
+          text-align: center;
+          line-height: 1.5;
         }
         
         .gallery-nav-button {
@@ -1535,7 +1748,22 @@ footer {
       }
     }
   }
-  .navbar .container .links { display: none; } // Ẩn menu trên mobile (Cần làm thêm nút hamburger nếu muốn)
+  // Mobile responsive styles for navbar
+  .navbar {
+    .container {
+      .mobile-menu-toggle {
+        display: block; // Show hamburger button on mobile
+      }
+
+      .links {
+        display: none; // Hide regular links on mobile
+      }
+
+      .mobile-menu {
+        display: block; // Show mobile menu when toggled
+      }
+    }
+  }
 }
 // ==========================================
 // 9. TRENDING SECTION (TIN NỔI BẬT)
