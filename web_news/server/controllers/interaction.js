@@ -64,46 +64,56 @@ export const getSavedPosts = (req, res) => {
 export const addToHistory = (req, res) => {
   const { user_id, post_id } = req.body;
 
-  // 1. Xóa lịch sử cũ của bài này (để tránh trùng lặp và cập nhật thời gian mới nhất)
-  const qDelete = "DELETE FROM ReadHistory WHERE user_id = ? AND post_id = ?";
-
-  db.query(qDelete, [user_id, post_id], (err, resultDelete) => {
+  // Use a transaction + SELECT ... FOR UPDATE for concurrency safety
+  db.beginTransaction((err) => {
     if (err) return res.status(500).json(err);
 
-    const alreadyRead = resultDelete.affectedRows > 0;
+    const qCheck = "SELECT id FROM ReadHistory WHERE user_id = ? AND post_id = ? FOR UPDATE";
+    db.query(qCheck, [user_id, post_id], (err, data) => {
+      if (err) return db.rollback(() => res.status(500).json(err));
 
-    // 2. Thêm lại vào bảng
-    const qInsert = "INSERT INTO ReadHistory (user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
-    
-    db.query(qInsert, [user_id, post_id], (err, data) => {
-       if (err) return res.status(500).json(err);
+      if (data.length > 0) {
+        // Update viewed_at
+        const qUpdate = "UPDATE ReadHistory SET viewed_at = NOW() WHERE id = ?";
+        db.query(qUpdate, [data[0].id], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
+          db.commit((err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            return res.status(200).json("Updated history");
+          });
+        });
+      } else {
+        // Insert and increment view_count
+        const qInsert = "INSERT INTO ReadHistory (user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
+        db.query(qInsert, [user_id, post_id], (err) => {
+          if (err) return db.rollback(() => res.status(500).json(err));
 
-       // 3. Cập nhật view_count nếu là lượt đọc mới
-       if (!alreadyRead) {
-         // Update NewsStats view_count, create entry if it doesn't exist
-         const qCheck = "SELECT post_id FROM NewsStats WHERE post_id = ?";
-         db.query(qCheck, [post_id], (err, stats) => {
-           if (err) {
-             console.error("Error checking NewsStats:", err);
-             return;
-           }
-           if (stats.length === 0) {
-             // Create NewsStats entry if it doesn't exist
-             const qInsert = "INSERT INTO NewsStats (post_id, view_count, comment_count, rating_avg) VALUES (?, 1, 0, 0)";
-             db.query(qInsert, [post_id], (err) => {
-               if (err) console.error("Error creating NewsStats:", err);
-             });
-           } else {
-             // Update existing entry
-             const qUpdate = "UPDATE NewsStats SET view_count = view_count + 1 WHERE post_id = ?";
-             db.query(qUpdate, [post_id], (err) => {
-               if (err) console.error("Error updating view_count:", err);
-             });
-           }
-         });
-       }
+          const qCheckStats = "SELECT post_id FROM NewsStats WHERE post_id = ?";
+          db.query(qCheckStats, [post_id], (err, stats) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
 
-       return res.status(200).json("Đã cập nhật lịch sử.");
+            if (stats.length === 0) {
+              const qInsertStats = "INSERT INTO NewsStats (post_id, view_count, comment_count, rating_avg) VALUES (?, 1, 0, 0)";
+              db.query(qInsertStats, [post_id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json(err));
+                db.commit((err) => {
+                  if (err) return db.rollback(() => res.status(500).json(err));
+                  return res.status(200).json("Đã cập nhật lịch sử.");
+                });
+              });
+            } else {
+              const qUpdateStats = "UPDATE NewsStats SET view_count = view_count + 1 WHERE post_id = ?";
+              db.query(qUpdateStats, [post_id], (err) => {
+                if (err) return db.rollback(() => res.status(500).json(err));
+                db.commit((err) => {
+                  if (err) return db.rollback(() => res.status(500).json(err));
+                  return res.status(200).json("Đã cập nhật lịch sử.");
+                });
+              });
+            }
+          });
+        });
+      }
     });
   });
 };

@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../context/authContext";
-import axios from "axios";
+import axios from "../utils/axios";
 import moment from "moment";
 // Thêm icon Sửa, Xóa
 import { FaTrash, FaPen } from "react-icons/fa"; 
@@ -20,7 +20,7 @@ const Comments = ({ postId }) => {
 
   const fetchComments = async () => {
     try {
-      const res = await axios.get(`http://localhost:8800/api/comments?postId=${postId}`);
+      const res = await axios.get(`/comments?postId=${postId}`);
       setComments(res.data);
     } catch (err) { console.log(err); }
   };
@@ -38,7 +38,7 @@ const Comments = ({ postId }) => {
     if (!content.trim()) return;
 
     try {
-      await axios.post("http://localhost:8800/api/comments", {
+      await axios.post(`/comments`, {
         desc: content,
         post_id: postId,
         user_id: currentUser.id,
@@ -53,7 +53,7 @@ const Comments = ({ postId }) => {
   const handleDelete = async (commentId) => {
     if (!window.confirm("Bạn có chắc muốn xóa bình luận này?")) return;
     try {
-      await axios.delete(`http://localhost:8800/api/comments/${commentId}`);
+      await axios.delete(`/comments/${commentId}`);
       fetchComments();
     } catch (err) {
       alert(err.response.data);
@@ -70,7 +70,7 @@ const Comments = ({ postId }) => {
   // --- LƯU SỬA ---
   const handleSaveEdit = async (commentId) => {
     try {
-      await axios.put(`http://localhost:8800/api/comments/${commentId}`, {
+      await axios.put(`/comments/${commentId}`, {
         content: editContent
       });
       setEditingCommentId(null);
@@ -91,6 +91,7 @@ const Comments = ({ postId }) => {
   const renderCommentItem = (comment) => {
     const isOwner = currentUser && currentUser.id === comment.user_id;
     const isEditing = editingCommentId === comment.id;
+    const parentComment = comments.find(c => c.id === comment.parent_id);
 
     return (
       <div className="comment" key={comment.id}>
@@ -123,8 +124,11 @@ const Comments = ({ postId }) => {
                 </div>
              </div>
           ) : (
-             <p>{comment.content}</p>
-          )}
+             <>
+               {parentComment && <div className="in-reply-to">Trả lời <strong>@{parentComment.username}</strong></div>}
+               <p>{comment.content}</p>
+             </>
+          )} 
 
           <div className="actions">
              <span className="date">{moment(comment.created_at).fromNow()}</span>
@@ -136,8 +140,48 @@ const Comments = ({ postId }) => {
   };
 
   // Lọc comment cha và con
-  const rootComments = comments.filter(c => c.parent_id === null);
-  const getReplies = (parentId) => comments.filter(c => c.parent_id === parentId);
+  // Treat parent_id null/undefined/0 as root comments, and sort roots chronologically (old -> new)
+  const rootComments = comments
+    .filter(c => c.parent_id == null || c.parent_id === 0)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  // Match replies regardless of type (string/number) and sort chronologically (old -> new)
+  const getReplies = (parentId) => comments
+    .filter(c => c.parent_id == parentId)
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  const renderReplyForm = (targetId, targetUsername) => {
+    return (
+      <div className="write reply-input" style={{ marginLeft: "40px", marginTop: "10px" }}>
+        <div className="replying-to-label" style={{ fontSize: "12px", marginBottom: "5px", color: "#666" }}>
+          Trả lời <strong>@{targetUsername}</strong>
+        </div>
+        <input
+          autoFocus
+          type="text"
+          placeholder={`Trả lời ${targetUsername}...`}
+          value={replyDesc}
+          onChange={(e) => setReplyDesc(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSend(e, targetId); }}
+          style={{ width: "100%", padding: "5px", marginBottom: "5px" }}
+        />
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={(e) => handleSend(e, targetId)}
+            style={{ border: "none", background: "teal", color: "white", padding: "5px 10px", cursor: "pointer", borderRadius: "3px" }}
+          >
+            Gửi
+          </button>
+          <button
+            className="cancel-btn"
+            onClick={() => { setReplyingTo(null); setReplyDesc(""); }}
+            style={{ border: "none", background: "#ccc", color: "black", padding: "5px 10px", cursor: "pointer", borderRadius: "3px" }}
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="comments">
@@ -153,18 +197,18 @@ const Comments = ({ postId }) => {
           {/* Render Comment Cha */}
           {renderCommentItem(comment)}
 
-          {/* Form Reply */}
-          {replyingTo === comment.id && (
-            <div className="write reply-input">
-               <input autoFocus type="text" placeholder={`Trả lời ${comment.username}...`} value={replyDesc} onChange={e => setReplyDesc(e.target.value)} />
-               <button onClick={(e) => handleSend(e, comment.id)}>Gửi</button>
-               <button className="cancel-btn" onClick={() => setReplyingTo(null)}>Hủy</button>
-            </div>
-          )}
+          {/* Form Reply for parent comment */}
+          {replyingTo === comment.id && renderReplyForm(comment.id, comment.username)}
 
           {/* Render List Comment Con */}
-          <div className="replies">
-            {getReplies(comment.id).map(reply => renderCommentItem(reply))}
+          <div className="replies" style={{ paddingLeft: "20px" }}>
+            {getReplies(comment.id).map(reply => (
+              <div key={reply.id}>
+                 {renderCommentItem(reply)}
+                 {/* Reply form for child comment */}
+                 {replyingTo === reply.id && renderReplyForm(reply.id, reply.username)}
+              </div>
+            ))}
           </div>
         </div>
       ))}

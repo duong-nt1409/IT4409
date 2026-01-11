@@ -49,8 +49,12 @@ const AdminDashboard = () => {
 
   const handleApproveEditor = async (userId) => {
     try {
-      await axios.put(`/admin/users/${userId}/status`, { status: "approved" });
-      alert("Đã duyệt Editor thành công!");
+      const res = await axios.put(`/admin/users/${userId}/status`, { status: "approved" });
+      if (res.data && res.data.emailSent === false) {
+        alert("Đã duyệt Editor thành công, nhưng email thông báo không gửi được.");
+      } else {
+        alert("Đã duyệt Editor thành công!");
+      }
       // Refresh data
       setPendingEditors(pendingEditors.filter((editor) => editor.id !== userId));
     } catch (err) {
@@ -62,8 +66,12 @@ const AdminDashboard = () => {
   const handleRejectEditor = async (userId) => {
     if (!window.confirm("Bạn có chắc chắn muốn từ chối Editor này?")) return;
     try {
-      await axios.put(`/admin/users/${userId}/status`, { status: "rejected" });
-      alert("Đã từ chối Editor!");
+      const res = await axios.put(`/admin/users/${userId}/status`, { status: "rejected" });
+      if (res.data && res.data.emailSent === false) {
+        alert("Đã từ chối Editor, nhưng email thông báo không gửi được.");
+      } else {
+        alert("Đã từ chối Editor!");
+      }
       setPendingEditors(pendingEditors.filter((editor) => editor.id !== userId));
     } catch (err) {
       console.error(err);
@@ -318,7 +326,7 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         </td>
-                        <td>{editor.years_of_experience} năm</td>
+                        <td>{editor.years_of_experience ?? 0} năm</td>
                         <td>{new Date(editor.created_at).toLocaleDateString()}</td>
                         <td>
                           <div className="actions">

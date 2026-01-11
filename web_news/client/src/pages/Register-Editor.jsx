@@ -108,7 +108,7 @@ const RegisterEditor = () => {
         {err && <p>{err}</p>}
         <span>
           Bạn đã có tài khoản?{" "}
-          <Link to="/login">Đăng nhập Editor</Link>
+          <Link to="/login">Đăng nhập </Link>
         </span>
         <button onClick={() => navigate("/login")}>Home</button>
       </form>

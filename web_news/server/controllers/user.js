@@ -94,30 +94,63 @@ export const addToHistory = (req, res) => {
   jwt.verify(token, "jwtkey", (err, userInfo) => {
     if (err) return res.status(403).json("Token is not valid!");
 
-    // 1. Kiểm tra xem đã xem chưa (trong bảng readhistory)
-    const qCheck = "SELECT * FROM readhistory WHERE user_id = ? AND post_id = ?";
-    
-    db.query(qCheck, [userInfo.id, req.body.postId], (err, data) => {
+    const userId = userInfo.id;
+    const postId = req.body.postId;
+
+    // Use transaction + SELECT ... FOR UPDATE to avoid race conditions and double increments
+    db.beginTransaction((err) => {
       if (err) return res.status(500).json(err);
 
-      if (data.length > 0) {
-        // 2. Nếu có rồi -> Cập nhật thời gian (created_at hoặc viewed_at tùy cột của bạn)
-        // Giả sử bạn dùng cột 'created_at' mặc định
-        const qUpdate = "UPDATE readhistory SET created_at = NOW() WHERE id = ?";
-        db.query(qUpdate, [data[0].id], (err, data) => {
-            if (err) return res.status(500).json(err);
-            return res.status(200).json("Updated history");
-        });
-      } else {
-        // 3. Nếu chưa -> Thêm mới vào readhistory
-        const qInsert = "INSERT INTO readhistory(`user_id`, `post_id`) VALUES (?)";
-        const values = [userInfo.id, req.body.postId];
-        
-        db.query(qInsert, [values], (err, data) => {
-          if (err) return res.status(500).json(err);
-          return res.status(200).json("Added to history");
-        });
-      }
+      const qCheck = "SELECT id FROM ReadHistory WHERE user_id = ? AND post_id = ? FOR UPDATE";
+      db.query(qCheck, [userId, postId], (err, data) => {
+        if (err) {
+          return db.rollback(() => res.status(500).json(err));
+        }
+
+        if (data.length > 0) {
+          // Already exists -> update viewed_at
+          const qUpdate = "UPDATE ReadHistory SET viewed_at = NOW() WHERE id = ?";
+          db.query(qUpdate, [data[0].id], (err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+            db.commit((err) => {
+              if (err) return db.rollback(() => res.status(500).json(err));
+              return res.status(200).json("Updated history");
+            });
+          });
+        } else {
+          // Not viewed before -> insert + increment NewsStats atomically
+          const qInsert = "INSERT INTO ReadHistory(user_id, post_id, viewed_at) VALUES (?, ?, NOW())";
+          db.query(qInsert, [userId, postId], (err) => {
+            if (err) return db.rollback(() => res.status(500).json(err));
+
+            // Update NewsStats (create if missing)
+            const qCheckStats = "SELECT post_id FROM NewsStats WHERE post_id = ?";
+            db.query(qCheckStats, [postId], (err, stats) => {
+              if (err) return db.rollback(() => res.status(500).json(err));
+
+              if (stats.length === 0) {
+                const qInsertStats = "INSERT INTO NewsStats (post_id, view_count, comment_count, rating_avg) VALUES (?, 1, 0, 0)";
+                db.query(qInsertStats, [postId], (err) => {
+                  if (err) return db.rollback(() => res.status(500).json(err));
+                  db.commit((err) => {
+                    if (err) return db.rollback(() => res.status(500).json(err));
+                    return res.status(200).json("Đã cập nhật lịch sử.");
+                  });
+                });
+              } else {
+                const qUpdateStats = "UPDATE NewsStats SET view_count = view_count + 1 WHERE post_id = ?";
+                db.query(qUpdateStats, [postId], (err) => {
+                  if (err) return db.rollback(() => res.status(500).json(err));
+                  db.commit((err) => {
+                    if (err) return db.rollback(() => res.status(500).json(err));
+                    return res.status(200).json("Đã cập nhật lịch sử.");
+                  });
+                });
+              }
+            });
+          });
+        }
+      });
     });
   });
 };
