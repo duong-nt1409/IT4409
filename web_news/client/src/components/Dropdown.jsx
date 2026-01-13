@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios"; // <--- 1. Import axios
-import { FaUser, FaBookmark, FaList, FaLink, FaSignOutAlt, FaEdit } from "react-icons/fa";
+import axios from "axios"; 
+import { FaUser, FaBookmark, FaList, FaSignOutAlt, FaEdit, FaTools } from "react-icons/fa";
 
 const Dropdown = ({ user, logout }) => {
   // 2. Tạo state để lưu số liệu thống kê
@@ -56,11 +56,20 @@ const Dropdown = ({ user, logout }) => {
           </Link>
         </li>
         
-        {/* Editor option - only show if user has editor role */}
-        {user?.role_id === 2 && (
+        {/* Editor option - only show if user has editor role (2) */}
+        {user?.role_id == 2 && (
           <li>
             <Link to="/editor">
               <FaEdit className="icon" style={{color: "#1976d2"}} /> Trang Editor
+            </Link>
+          </li>
+        )}
+
+        {/* Admin option - only show if user has admin role (1) */}
+        {user?.role_id == 1 && (
+          <li>
+            <Link to="/admin-dashboard">
+              <FaTools className="icon" style={{color: "#d32f2f"}} /> Trang Admin
             </Link>
           </li>
         )}

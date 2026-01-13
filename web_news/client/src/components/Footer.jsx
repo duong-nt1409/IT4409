@@ -39,16 +39,15 @@ const Footer = () => {
 
           <div className="logo-brand">
             <h2 style={{color: "teal", margin: 0}}>MyNews</h2>
-            <span style={{marginLeft: "10px", fontSize: "11px", color: "#777", fontWeight: "bold"}}>Dự án mẫu</span>
           </div>
 
-          <p className="license-title">TRANG THÔNG TIN MẪU DÙNG CHO DỰ ÁN HỌC TẬP.</p>
+          <p className="license-title">TRANG THÔNG TIN ĐIỆN TỬ TỔNG HỢP.</p>
 
           <div className="info-text">
             <p>Địa chỉ: 123 Đường ABC, Quận 1, Thành phố XYZ</p>
             <p>Điện thoại liên hệ: +84 123 456 789</p>
             <p>Email hỗ trợ: support@mynews.vn</p>
-            <p>Chịu trách nhiệm nội dung: <b>Nguyễn Văn A</b> - Dự án học tập.</p>
+            <p>Chịu trách nhiệm nội dung: <b>Nguyễn Văn A</b> - Tổng biên tập.</p>
           </div>
         </div>
 

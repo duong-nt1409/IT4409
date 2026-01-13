@@ -2,6 +2,18 @@ import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import axios from "../utils/axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
 import "../style_admin.scss";
 
 const AdminDashboard = () => {
@@ -9,10 +21,15 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [stats, setStats] = useState(null);
+  const [weeklyStats, setWeeklyStats] = useState([]);
   const [editors, setEditors] = useState([]);
   const [pendingEditors, setPendingEditors] = useState([]);
   const [pendingPosts, setPendingPosts] = useState([]);
   const [reportedPosts, setReportedPosts] = useState([]);
+  
+  // Modal State
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -24,28 +41,77 @@ const AdminDashboard = () => {
   }, [currentUser, navigate]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
+    const fetchStats = async () => {
+       try {
         const statsRes = await axios.get("/admin/stats");
         setStats(statsRes.data);
+       } catch (err) { console.error("Stats Error:", err); }
+    };
 
+    const fetchWeeklyStats = async () => {
+      try {
+        const weeklyRes = await axios.get("/admin/stats/weekly");
+        setWeeklyStats(weeklyRes.data);
+      } catch (err) { console.error("Weekly Stats Error:", err); }
+    };
+
+    const fetchEditors = async () => {
+      try {
         const editorsRes = await axios.get("/admin/editors");
+        console.log("Editors Data:", editorsRes.data);
         setEditors(editorsRes.data);
+      } catch (err) { console.error("Editors Error:", err); }
+    };
 
+    const fetchPendingEditors = async () => {
+      try {
         const pendingEditorsRes = await axios.get("/admin/editors/pending");
         setPendingEditors(pendingEditorsRes.data);
+      } catch (err) { console.error("Pending Editors Error:", err); }
+    };
 
+    const fetchPendingPosts = async () => {
+      try {
         const postsRes = await axios.get("/admin/posts/pending");
         setPendingPosts(postsRes.data);
+      } catch (err) { console.error("Pending Posts Error:", err); }
+    };
 
+    const fetchReports = async () => {
+      try {
         const reportsRes = await axios.get("/admin/reports");
         setReportedPosts(reportsRes.data);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error("Reports Error:", err); }
     };
-    fetchData();
-  }, [activeTab]);
+
+    if (currentUser?.role_id !== 1) {
+      navigate("/");
+    } else {
+      fetchStats();
+      fetchWeeklyStats();
+      fetchEditors();
+      fetchPendingEditors();
+      fetchPendingPosts();
+      fetchReports();
+    }
+  }, [activeTab, currentUser, navigate]);
+
+  const handleViewReportDetails = async (reportId) => {
+    try {
+      const res = await axios.get(`/admin/reports/${reportId}/details`);
+      setSelectedReport(res.data);
+      setShowReportModal(true);
+    } catch (err) {
+      console.error(err);
+      alert("Không thể lấy chi tiết báo cáo");
+    }
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setSelectedReport(null);
+  };
+
 
   const handleApproveEditor = async (userId) => {
     try {
@@ -232,6 +298,44 @@ const AdminDashboard = () => {
                 <span className="desc">Nhân sự nội dung</span>
               </div>
             </div>
+
+            {/* CHARTS SECTION */}
+            <div className="charts-container" style={{ marginTop: "40px", display: "flex", gap: "20px", flexWrap: "wrap" }}>
+              <div className="chart-wrapper" style={{ flex: 1, minWidth: "400px", background: "white", padding: "20px", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+                <h3>Thống Kê Tương Tác (7 Ngày Gần Nhất)</h3>
+                <div style={{ height: "300px", width: "100%" }}>
+                  <ResponsiveContainer>
+                    <LineChart data={weeklyStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line type="monotone" dataKey="views" stroke="#8884d8" name="Lượt xem" />
+                      <Line type="monotone" dataKey="likes" stroke="#82ca9d" name="Lượt thích" />
+                      <Line type="monotone" dataKey="comments" stroke="#ffc658" name="Bình luận" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div className="chart-wrapper" style={{ flex: 1, minWidth: "400px", background: "white", padding: "20px", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+                <h3>Tổng Quan Tương Tác</h3>
+                <div style={{ height: "300px", width: "100%" }}>
+                  <ResponsiveContainer>
+                    <BarChart data={weeklyStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="views" fill="#8884d8" name="Lượt xem" />
+                      <Bar dataKey="likes" fill="#82ca9d" name="Lượt thích" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -244,14 +348,23 @@ const AdminDashboard = () => {
                 <thead>
                   <tr>
                     <th>Editor</th>
+                    <th>Thông Tin Cá Nhân</th>
                     <th>Kinh Nghiệm</th>
                     <th>Bài Viết</th>
                     <th>Tổng Views</th>
                     <th>Ngày Tham Gia</th>
+                    <th>Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {editors.map((editor) => (
+                  {!editors || editors.length === 0 ? (
+                    <tr>
+                       <td colSpan="7" style={{textAlign:"center", padding:"20px"}}>
+                          Không có editor nào
+                       </td>
+                    </tr>
+                  ) : (
+                    editors.map((editor) => (
                     <tr key={editor.id}>
                       <td>
                         <div className="user-info">
@@ -266,6 +379,13 @@ const AdminDashboard = () => {
                             <strong>{editor.name || editor.username}</strong>
                             <span>{editor.email}</span>
                           </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{fontSize: "0.9rem"}}>
+                            <p><strong>SĐT:</strong> {editor.phone || "N/A"}</p>
+                            <p><strong>Đ/C:</strong> {editor.address || "N/A"}</p>
+                            <p><strong>Giới tính:</strong> {editor.gender || "N/A"}</p>
                         </div>
                       </td>
                       <td>{editor.years_of_experience} năm</td>
@@ -284,7 +404,7 @@ const AdminDashboard = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -391,6 +511,21 @@ const AdminDashboard = () => {
                         <td style={{textAlign: "center"}}>
                           <div style={{display: "flex", gap: "8px", justifyContent: "center"}}>
                             <button
+                                className="btn-view-details"
+                                onClick={() => handleViewReportDetails(post.id)}
+                                title="Xem chi tiết báo cáo"
+                                style={{
+                                    backgroundColor: "#3498db",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "5px 10px",
+                                    borderRadius: "4px",
+                                    cursor: "pointer"
+                                }}
+                            >
+                                👁️ Chi Tiết
+                            </button>
+                            <button
                               className="btn-delete-report"
                               onClick={() => handleDeletePost(post.id)}
                               title="Xóa bài viết vĩnh viễn"
@@ -411,6 +546,71 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+            
+            {/* Modal Chi Tiết Báo Cáo */}
+            {showReportModal && selectedReport && (
+                <div className="modal-overlay" style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1000,
+                    display: "flex", justifyContent: "center", alignItems: "center"
+                }}>
+                    <div className="modal-content" style={{
+                        background: "white", padding: "20px", borderRadius: "10px",
+                        width: "80%", maxWidth: "800px", maxHeight: "80vh", overflowY: "auto",
+                        position: "relative"
+                    }}>
+                        <button 
+                            onClick={closeReportModal}
+                            style={{
+                                position: "absolute", right: "20px", top: "20px",
+                                background: "none", border: "none", fontSize: "20px", cursor: "pointer"
+                            }}
+                        >✖</button>
+                        
+                        <h2>Chi Tiết Báo Cáo</h2>
+                        
+                        <div className="report-info" style={{marginBottom: "20px", padding: "10px", backgroundColor: "#f9f9f9", borderRadius: "5px"}}>
+                            <h3>Bài Viết Bị Báo Cáo</h3>
+                            <p><strong>Tiêu đề:</strong> {selectedReport.post.title}</p>
+                            <p><strong>Tác giả:</strong> {selectedReport.post.author_name}</p>
+                            <p><strong>Trạng thái:</strong> {selectedReport.post.status}</p>
+                            <a href={`/post/${selectedReport.post.id}`} target="_blank" rel="noreferrer" style={{color: "#3498db"}}>Xem bài viết gốc</a>
+                        </div>
+
+                        <h3>Danh Sách Người Báo Cáo ({selectedReport.reports.length})</h3>
+                        <div className="table-wrapper">
+                            <table style={{width: "100%"}}>
+                                <thead>
+                                    <tr>
+                                        <th>Người Báo Cáo</th>
+                                        <th>Lý Do</th>
+                                        <th>Thời Gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedReport.reports.map((report, index) => (
+                                        <tr key={index}>
+                                            <td>{report.reporter_name}</td>
+                                            <td>{report.reason}</td>
+                                            <td>{new Date(report.created_at).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="modal-actions" style={{marginTop: "20px", display: "flex", justifyContent: "flex-end", gap: "10px"}}>
+                            <button onClick={closeReportModal} style={{padding: "8px 16px", cursor: "pointer"}}>Đóng</button>
+                            <button 
+                                onClick={() => { handleDeletePost(selectedReport.post.id); closeReportModal(); }}
+                                style={{padding: "8px 16px", background: "#e74c3c", color: "white", border: "none", borderRadius: "4px", cursor: "pointer"}}
+                            >
+                                Xóa Bài Viết
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
           </div>
         )}
@@ -435,6 +635,14 @@ const AdminDashboard = () => {
                     <div className="author">
                       Tác giả: <strong>{post.author_name}</strong>
                     </div>
+                    
+                    {/* Xem trước bài viết */}
+                    <div className="preview-content" style={{marginBottom:"10px"}}>
+                        <a href={`/post/${post.id}`} target="_blank" rel="noreferrer" style={{color: "#3498db", textDecoration: "underline", fontSize: "14px"}}>
+                          👁️ Xem nội dung bài viết
+                        </a>
+                    </div>
+
                     <div className="actions">
                       <button
                         className="btn-approve"

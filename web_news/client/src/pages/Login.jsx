@@ -18,7 +18,7 @@ const Login = () => {
   // Hàm xử lý điều hướng dựa trên role_id
   const handleRedirect = (user) => {
     if (user.role_id === 1) {
-      navigate("/admin");
+      navigate("/admin-dashboard");
     } else if (user.role_id === 2) {
       navigate("/editor");
     } else {

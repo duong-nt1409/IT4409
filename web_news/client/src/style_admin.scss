@@ -9,6 +9,17 @@ $text-color: #2b2d42;
 $gray-text: #8d99ae;
 $border-color: #e9ecef;
 
+// ANIMATIONS
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 .admin-container {
   display: flex;
   min-height: 100vh;
@@ -25,6 +36,8 @@ $border-color: #e9ecef;
     padding: 20px;
     position: fixed;
     height: 100vh;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.02); // Subtle shadow
+    z-index: 100;
     
     .logo {
       margin-bottom: 40px;
@@ -33,6 +46,7 @@ $border-color: #e9ecef;
         font-weight: 800;
         font-size: 24px;
         letter-spacing: -0.5px;
+        text-transform: uppercase;
       }
     }
 
@@ -53,7 +67,7 @@ $border-color: #e9ecef;
         font-weight: 500;
         cursor: pointer;
         border-radius: 8px;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 15px;
         text-align: left;
 
@@ -66,20 +80,23 @@ $border-color: #e9ecef;
           background: $danger-color;
           color: white;
           font-size: 11px;
-          padding: 2px 6px;
-          border-radius: 10px;
+          padding: 2px 8px; // Generic pill shape
+          border-radius: 12px;
           margin-left: auto;
+          box-shadow: 0 2px 4px rgba($danger-color, 0.3);
         }
 
         &:hover {
           background: rgba($primary-color, 0.05);
           color: $primary-color;
+          transform: translateX(5px);
         }
 
         &.active {
           background: $primary-color;
           color: white;
           box-shadow: 0 4px 12px rgba($primary-color, 0.3);
+          transform: translateX(5px);
           
           .badge {
             background: white;
@@ -102,9 +119,14 @@ $border-color: #e9ecef;
         font-weight: 600;
         cursor: pointer;
         transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
 
         &:hover {
           background: #ffcccc;
+          transform: scale(1.02);
         }
       }
     }
@@ -115,6 +137,7 @@ $border-color: #e9ecef;
     flex: 1;
     margin-left: 260px; // Width of sidebar
     padding: 40px;
+    animation: slideInUp 0.5s ease-out;
 
     header {
       margin-bottom: 40px;
@@ -143,10 +166,20 @@ $border-color: #e9ecef;
         border-radius: 16px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.02);
-        transition: transform 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; width: 4px; height: 100%;
+          background: currentColor;
+        }
 
         &:hover {
-          transform: translateY(-5px);
+          transform: translateY(-8px);
+          box-shadow: 0 15px 30px rgba(0,0,0,0.08);
         }
 
         h3 {
@@ -169,10 +202,17 @@ $border-color: #e9ecef;
           color: $gray-text;
         }
 
-        &.blue { border-left: 4px solid $primary-color; }
-        &.green { border-left: 4px solid #2ec4b6; }
-        &.orange { border-left: 4px solid #ff9f1c; }
-        &.purple { border-left: 4px solid #7209b7; }
+        &.blue { color: $primary-color; border-left: none; }
+        &.blue::after { background: $primary-color; }
+        
+        &.green { color: #2ec4b6; border-left: none; }
+        &.green::after { background: #2ec4b6; }
+        
+        &.orange { color: #ff9f1c; border-left: none; }
+        &.orange::after { background: #ff9f1c; }
+        
+        &.purple { color: #7209b7; border-left: none; }
+        &.purple::after { background: #7209b7; }
       }
     }
 
@@ -182,6 +222,7 @@ $border-color: #e9ecef;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.03);
       overflow: hidden;
+      animation: slideInUp 0.6s ease-out;
 
       table {
         width: 100%;
@@ -194,7 +235,15 @@ $border-color: #e9ecef;
           font-size: 13px;
           color: $gray-text;
           text-transform: uppercase;
-          font-weight: 600;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+          transition: background-color 0.2s;
+          &:hover {
+             background-color: #f8f9fa;
+          }
         }
 
         td {
@@ -428,11 +477,31 @@ $border-color: #e9ecef;
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
         }
-
-        &:active {
-          transform: translateY(0);
-        }
       }
     }
   }
+
+  // MODAL STYLING
+  .modal-overlay {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .modal-content {
+      animation: zoomIn 0.3s ease-out;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important; // Stronger shadow for modal
+      border: 1px solid rgba(0,0,0,0.05);
+
+      h2 {
+          color: $primary-color;
+          border-bottom: 2px solid #f0f0f0;
+          padding-bottom: 15px;
+          margin-bottom: 20px;
+      }
+  }
+}
+
+// Global Animation Keyframes Reuse (if needed outside)
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

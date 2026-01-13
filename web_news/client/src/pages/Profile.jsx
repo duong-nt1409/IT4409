@@ -138,6 +138,15 @@ const Profile = () => {
                 </Link>
               </li>
             )}
+
+            {/* Admin dashboard link - only show if user has admin role */}
+            {currentUser?.role_id === 1 && (
+              <li>
+                <Link to="/admin-dashboard" style={{display:"flex", alignItems:"center", width:"100%", color:"inherit", textDecoration:"none"}}>
+                  <FaUser className="icon gray" /> Trang Quản Trị
+                </Link>
+              </li>
+            )}
             
             <li className="logout" onClick={handleLogout}>
                 <FaSignOutAlt className="icon gray" /> Thoát tài khoản

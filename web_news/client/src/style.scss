@@ -219,7 +219,7 @@ a { text-decoration: none; color: inherit; }
           background-color: #f5f5f5;
         }
 
-        .nav-avatar {
+        .user-avatar { 
           width: 36px;
           height: 36px;
           border-radius: 50%;
@@ -227,13 +227,18 @@ a { text-decoration: none; color: inherit; }
           border: 1px solid #ddd;
         }
         
-        .username {
-          font-size: 13px;
-          font-weight: bold;
-          max-width: 100px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+        .user-info {
+          display: flex; 
+          flex-direction: column;
+          
+           .user-name {
+            font-size: 13px;
+            font-weight: bold;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+           }
         }
       }
 
@@ -520,6 +525,7 @@ a { text-decoration: none; color: inherit; }
       .sidebar-post {
         display: flex; gap: 15px; margin-bottom: 20px;
         border-bottom: 1px solid #f9f9f9; padding-bottom: 15px;
+        align-items: center; 
         &:last-child { border-bottom: none; }
 
         .img-container {
@@ -528,6 +534,7 @@ a { text-decoration: none; color: inherit; }
         }
 
         .info {
+          flex: 1;
           display: flex; flex-direction: column; justify-content: space-between;
           h4 { font-size: 14px; font-weight: 600; line-height: 1.4; color: #333; margin: 0; 
                display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;

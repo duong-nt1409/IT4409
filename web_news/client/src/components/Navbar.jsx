@@ -172,20 +172,22 @@ const Navbar = () => {
           </div>
           {/* -------------------------------------------------- */}
 
-          {/* Phần User Profile */}
-          {currentUser ? (
-            <Link to="/profile" className="user-profile-link">
-              <img 
-                src={currentUser.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
-                alt="" 
-                className="nav-avatar" 
-              />
-              <span className="username">{currentUser.username}</span>
-            </Link>
+              {currentUser ? (
+                <Link to="/profile" className="user-profile-link">
+                  <img 
+                    src={currentUser.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+                    alt="" 
+                    className="user-avatar" 
+                  />
+                  <div className="user-info">
+                    <span className="user-name">{currentUser.username}</span>
+                  </div>
+                </Link>
           ) : (
             <Link className="login-link" to="/login">Đăng nhập</Link>
           )}
         </div>
+
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (

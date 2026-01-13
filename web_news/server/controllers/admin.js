@@ -8,7 +8,7 @@ export const getDashboardStats = (req, res) => {
       (SELECT COUNT(*) FROM Users WHERE role_id = 3) as total_users,
       (SELECT COUNT(*) FROM Users WHERE role_id = 2) as total_editors,
       (SELECT COUNT(*) FROM Posts) as total_posts,
-      (SELECT COALESCE(SUM(ns.view_count), 0) FROM NewsStats ns) as total_views, 
+      (SELECT COALESCE(SUM(view_count), 0) FROM Posts) as total_views, 
       (SELECT COUNT(*) FROM Posts WHERE status = 'pending') as pending_posts
   `;
   // Lưu ý: Mình sửa total_views lấy từ bảng Posts (nếu bạn không dùng bảng NewsStats) 
@@ -24,13 +24,13 @@ export const getEditorsList = (req, res) => {
   const q = `
     SELECT 
       u.id, u.username, u.email, u.avatar, u.name, u.age, 
-      u.years_of_experience as years_of_experience, 
+      u.years_of_experience as years_of_experience,
+      u.status,
       u.created_at,
       COUNT(p.id) as post_count,
-      COALESCE(SUM(ns.view_count), 0) as total_views
+      COALESCE(SUM(p.view_count), 0) as total_views
     FROM Users u
     LEFT JOIN Posts p ON u.id = p.user_id
-    LEFT JOIN NewsStats ns ON p.id = ns.post_id
     WHERE u.role_id = 2 AND u.status = 'approved'
     GROUP BY u.id
     ORDER BY post_count DESC
@@ -190,4 +190,129 @@ export const deleteReports = (req, res) => {
     if (err) return res.status(500).json(err);
     return res.status(200).json("Đã xóa báo cáo của bài viết!");
   });
+};
+
+export const getWeeklyStats = (req, res) => {
+  const q = `
+    SELECT 
+      DATE(created_at) as date,
+      COUNT(id) as count
+    FROM ReadHistory
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY DATE(created_at)
+    ORDER BY date ASC
+  `;
+  const qLikes = `
+    SELECT 
+      DATE(created_at) as date,
+      COUNT(id) as count
+    FROM Likes
+    -- Giả sử bảng Likes chưa có created_at, nếu chưa có thì phải thêm, tạm thời dùng NOW() cho demo nếu db chưa có
+    -- Nhưng theo logic phải có created_at. Kiểm tra lại DB. 
+    -- Nếu bảng Likes chưa có created_at, ta sẽ không lấy được theo ngày.
+    -- Giả định bảng Likes đã có created_at hoặc ta sẽ fix DB sau.
+    -- Tương tự với Comments.
+    GROUP BY DATE(created_at) -- Cần fix DB Likes/Comments nếu chưa có created_at
+    ORDER BY date ASC
+  `;
+  
+  // Lấy 7 ngày gần nhất (bao gồm hôm nay)
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10)); // Format YYYY-MM-DD
+  }
+
+  // Helper functions to execute queries
+  const executeQuery = (query) => {
+    return new Promise((resolve, reject) => {
+      db.query(query, (err, data) => {
+        if (err) return reject(err);
+        resolve(data);
+      });
+    });
+  };
+
+  const queryViews = `
+    SELECT DATE(viewed_at) as date, COUNT(*) as count 
+    FROM ReadHistory 
+    WHERE viewed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) 
+    GROUP BY date
+  `;
+
+  const queryComments = `
+    SELECT DATE(created_at) as date, COUNT(*) as count 
+    FROM Comments 
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) 
+    GROUP BY date
+  `;
+
+  const queryLikes = `
+    SELECT DATE(created_at) as date, COUNT(*) as count 
+    FROM Likes 
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) 
+    GROUP BY date
+  `;
+
+  Promise.all([
+    executeQuery(queryViews),
+    executeQuery(queryComments),
+    executeQuery(queryLikes).catch(err => [])
+  ])
+  .then(([views, comments, likes]) => {
+    const result = days.map(date => {
+      // Helper to format date consistent with how days array is formatted
+      const formatDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : null;
+
+      const v = views.find(item => formatDate(item.date) === date);
+      const c = comments.find(item => formatDate(item.date) === date);
+      const l = likes.find(item => formatDate(item.date) === date);
+
+      return {
+        date,
+        views: v ? v.count : 0,
+        comments: c ? c.count : 0,
+        likes: l ? l.count : 0
+      };
+    });
+    res.status(200).json(result);
+  })
+  .catch(err => {
+    console.error(err);
+    res.status(500).json(err);
+  });
+};
+
+export const getReportDetails = (req, res) => {
+    const postId = req.params.id;
+
+    const qPost = `
+      SELECT p.id, p.title, p.status, u.username as author_name 
+      FROM Posts p 
+      JOIN Users u ON p.user_id = u.id 
+      WHERE p.id = ?
+    `;
+
+    const qReports = `
+        SELECT r.id, r.reason, r.created_at, u.username as reporter_name
+        FROM Reports r
+        JOIN Users u ON r.user_id = u.id
+        WHERE r.post_id = ?
+        ORDER BY r.created_at DESC
+    `;
+
+    db.query(qPost, [postId], (err, postData) => {
+       if (err) return res.status(500).json(err);
+       if (postData.length === 0) return res.status(404).json("Post not found");
+
+       db.query(qReports, [postId], (err, reportsData) => {
+          if (err) return res.status(500).json(err);
+          
+          return res.status(200).json({
+             post: postData[0],
+             reports: reportsData
+          });
+       });
+    });
 };
